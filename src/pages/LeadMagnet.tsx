@@ -16,6 +16,7 @@ type Post = {
   table_exist: boolean | null;
   urn_post_id: string | null;
   Url_lead_magnet: string | null;
+  keyword: string | null;
 };
 
 type CommentsCount = {
@@ -139,6 +140,7 @@ export default function LeadMagnet() {
           urn_post_id: post.urn_post_id,
           url_lead_magnet: post.Url_lead_magnet,
           comments_table_name: post.comments_table_name,
+          keyword: post.keyword,
         }),
       });
 
