@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircle, TrendingUp, Users, ExternalLink } from "lucide-react";
+import { MessageCircle, TrendingUp, Users, ExternalLink, Play } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 
@@ -13,6 +14,7 @@ type Post = {
   added_at: string;
   comments_table_name: string | null;
   table_exist: boolean | null;
+  urn_post_id: string | null;
 };
 
 type CommentsCount = {
@@ -28,7 +30,9 @@ export default function LeadMagnet() {
   const [loading, setLoading] = useState(true);
   const [commentsData, setCommentsData] = useState<Record<number, CommentsCount>>({});
   const [totalLeads, setTotalLeads] = useState(0);
+  const [loadingPostId, setLoadingPostId] = useState<number | null>(null);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchPosts();
@@ -108,6 +112,50 @@ export default function LeadMagnet() {
       setTotalLeads(count || 0);
     } catch (error) {
       console.error('Error fetching total leads:', error);
+    }
+  };
+
+  const handleLaunchLeadMagnet = async (post: Post) => {
+    if (!post.urn_post_id) {
+      toast({
+        title: "Erreur",
+        description: "L'URN du post est manquant",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoadingPostId(post.id);
+    console.log("Lancement du lead magnet pour:", post.urn_post_id);
+
+    try {
+      const response = await fetch("https://n8n.srv802543.hstgr.cloud/webhook/leadmagnet", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          urn_post_id: post.urn_post_id,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP: ${response.status}`);
+      }
+
+      toast({
+        title: "Lead Magnet lancé",
+        description: "La requête a été envoyée avec succès",
+      });
+    } catch (error) {
+      console.error("Erreur lors du lancement:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de lancer le lead magnet",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingPostId(null);
     }
   };
 
@@ -285,6 +333,14 @@ export default function LeadMagnet() {
                         <p className="text-sm text-muted-foreground">Sans DM</p>
                         <p className="text-lg font-semibold text-orange-600">{comments.not_received_dm}</p>
                       </div>
+                      <Button
+                        onClick={() => handleLaunchLeadMagnet(post)}
+                        disabled={loadingPostId === post.id}
+                        className="ml-4"
+                      >
+                        <Play className="h-4 w-4 mr-2" />
+                        {loadingPostId === post.id ? "Envoi..." : "Lancer"}
+                      </Button>
                     </div>
                   </div>
                 );
