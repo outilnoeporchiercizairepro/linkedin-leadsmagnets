@@ -15,6 +15,7 @@ type Post = {
   comments_table_name: string | null;
   table_exist: boolean | null;
   urn_post_id: string | null;
+  Url_lead_magnet: string | null;
 };
 
 type CommentsCount = {
@@ -136,6 +137,8 @@ export default function LeadMagnet() {
         },
         body: JSON.stringify({
           urn_post_id: post.urn_post_id,
+          url_lead_magnet: post.Url_lead_magnet,
+          comments_table_name: post.comments_table_name,
         }),
       });
 
