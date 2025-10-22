@@ -29,14 +29,10 @@ const navigation = [
     href: "/objectives", 
     icon: Target 
   },
-  {
-    name: "Création de contenu",
-    icon: PenTool,
-    isSection: true,
-    children: [
-      { name: "Création de posts", href: "/content", icon: FileText },
-      { name: "Liste des posts", href: "/posts", icon: List },
-    ]
+  { 
+    name: "Liste des posts", 
+    href: "/posts", 
+    icon: List 
   },
   {
     name: "Veille de contenu",

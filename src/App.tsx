@@ -8,7 +8,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Objectives from "./pages/Objectives";
 import LeadMagnet from "./pages/LeadMagnet";
-import Content from "./pages/Content";
+
 import PostsList from "./pages/PostsList";
 import Competitors from "./pages/Competitors";
 import CompetitorPosts from "./pages/CompetitorPosts";
@@ -41,7 +41,7 @@ const App = () => {
               <Route path="objectives" element={<Objectives />} />
               <Route path="content-watch" element={<ContentWatch />} />
               <Route path="competitors" element={<Competitors />} />
-              <Route path="content" element={<Content />} />
+              
               <Route path="posts" element={<PostsList />} />
               <Route path="leads" element={<Leads />} />
               <Route path="lead-magnet" element={<LeadMagnet />} />
