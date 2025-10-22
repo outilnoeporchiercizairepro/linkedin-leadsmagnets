@@ -466,24 +466,26 @@ export default function PostsList() {
                         </DialogContent>
                       </Dialog>
 
-                      {!post.comments_table_name ? (
-                        <Button
-                          variant="default"
-                          size="sm"
-                          onClick={() => handleCreateTable(post.id)}
-                        >
-                          <Database className="h-4 w-4 mr-1" />
-                          Créer table
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled
-                        >
-                          <CheckCircle className="h-4 w-4 mr-1" />
-                          Table créée
-                        </Button>
+                      {post.keyword && (
+                        !post.comments_table_name ? (
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => handleCreateTable(post.id)}
+                          >
+                            <Database className="h-4 w-4 mr-1" />
+                            Créer table
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled
+                          >
+                            <CheckCircle className="h-4 w-4 mr-1" />
+                            Table créée
+                          </Button>
+                        )
                       )}
                     </div>
                   </TableCell>
