@@ -1,7 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { 
   LayoutDashboard, 
-  PenTool, 
   Users, 
   Magnet,
   ChevronLeft,
@@ -11,9 +10,7 @@ import {
   ChevronRight as ChevronRightSmall,
   Eye,
   List,
-  FileText,
-  TrendingUp,
-  Target
+  TrendingUp
 } from "lucide-react";
 import { useState } from "react";
 import { Logo } from "@/components/ui/logo";
@@ -23,20 +20,6 @@ const navigation = [
     name: "Dashboard", 
     href: "/dashboard", 
     icon: LayoutDashboard 
-  },
-  { 
-    name: "Objectifs", 
-    href: "/objectives", 
-    icon: Target 
-  },
-  {
-    name: "Création de contenu",
-    icon: PenTool,
-    isSection: true,
-    children: [
-      { name: "Création de posts", href: "/content", icon: FileText },
-      { name: "Liste des posts", href: "/posts", icon: List },
-    ]
   },
   {
     name: "Veille de contenu",
@@ -60,7 +43,7 @@ const navigation = [
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
-  const [expandedSections, setExpandedSections] = useState<string[]>(['Création de contenu', 'Veille de contenu', 'Leads']);
+  const [expandedSections, setExpandedSections] = useState<string[]>(['Veille de contenu', 'Leads']);
 
   const toggleSection = (sectionName: string) => {
     setExpandedSections(prev => 
