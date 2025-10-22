@@ -2,10 +2,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { TrendingUp, Users, Target } from "lucide-react";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useRecentActivity } from "@/hooks/useRecentActivity";
+import { useObjectives } from "@/hooks/useObjectives";
 
 export default function Dashboard() {
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
   const { data: recentActivity, isLoading: activityLoading } = useRecentActivity();
+  const { objectives } = useObjectives();
 
   const statsCards = [
     {
@@ -61,39 +63,97 @@ export default function Dashboard() {
       </div>
 
       {/* Recent Activity */}
-      <Card className="shadow-card">
-        <CardHeader>
-          <CardTitle>Activité récente</CardTitle>
-          <CardDescription>Vos dernières actions sur LinkedIn</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {activityLoading ? (
-              <div className="space-y-3">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="flex items-center space-x-3 p-3 rounded-lg bg-secondary/50 animate-pulse">
-                    <div className="h-2 w-2 bg-muted rounded-full"></div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="shadow-card">
+          <CardHeader>
+            <CardTitle>Activité récente</CardTitle>
+            <CardDescription>Vos dernières actions sur LinkedIn</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {activityLoading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="flex items-center space-x-3 p-3 rounded-lg bg-secondary/50 animate-pulse">
+                      <div className="h-2 w-2 bg-muted rounded-full"></div>
+                      <div className="flex-1">
+                        <div className="h-4 bg-muted rounded w-3/4 mb-1"></div>
+                        <div className="h-3 bg-muted rounded w-1/2"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                recentActivity?.map((activity, index) => (
+                  <div key={index} className="flex items-center space-x-3 p-3 rounded-lg bg-secondary/50">
+                    <div className="h-2 w-2 bg-primary rounded-full"></div>
                     <div className="flex-1">
-                      <div className="h-4 bg-muted rounded w-3/4 mb-1"></div>
-                      <div className="h-3 bg-muted rounded w-1/2"></div>
+                      <p className="text-sm font-medium">{activity.action}</p>
+                      <p className="text-xs text-muted-foreground">{activity.time}</p>
                     </div>
                   </div>
-                ))}
-              </div>
-            ) : (
-              recentActivity?.map((activity, index) => (
-                <div key={index} className="flex items-center space-x-3 p-3 rounded-lg bg-secondary/50">
-                  <div className="h-2 w-2 bg-primary rounded-full"></div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">{activity.action}</p>
-                    <p className="text-xs text-muted-foreground">{activity.time}</p>
-                  </div>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-card">
+          <CardHeader>
+            <CardTitle>Objectifs du mois</CardTitle>
+            <CardDescription>Progression vers vos objectifs</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {statsLoading ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="space-y-2 animate-pulse">
+                      <div className="flex justify-between">
+                        <div className="h-4 bg-muted rounded w-1/3"></div>
+                        <div className="h-4 bg-muted rounded w-1/4"></div>
+                      </div>
+                      <div className="w-full bg-secondary rounded-full h-2">
+                        <div className="bg-muted h-2 rounded-full w-2/3"></div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))
-            )}
-          </div>
-        </CardContent>
-      </Card>
+              ) : (
+                [
+                  { 
+                    goal: "Posts à publier", 
+                    current: stats?.postsThisMonth || 0, 
+                    target: objectives.postsPerMonth, 
+                    percentage: Math.min(((stats?.postsThisMonth || 0) / objectives.postsPerMonth) * 100, 100) 
+                  },
+                  { 
+                    goal: "Leads à générer", 
+                    current: stats?.leadsThisMonth || 0, 
+                    target: objectives.leadsPerMonth, 
+                    percentage: Math.min(((stats?.leadsThisMonth || 0) / objectives.leadsPerMonth) * 100, 100) 
+                  },
+                ].map((goal, index) => (
+                  <div key={index} className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="font-medium">{goal.goal}</span>
+                      <span className="text-muted-foreground">
+                        {goal.current}/{goal.target}
+                      </span>
+                    </div>
+                    <div className="w-full bg-secondary rounded-full h-2">
+                      <div
+                        className="bg-gradient-primary h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${goal.percentage}%` }}
+                      />
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
