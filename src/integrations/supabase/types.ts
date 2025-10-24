@@ -193,7 +193,7 @@ export type Database = {
         }
         Relationships: []
       }
-      post_comments_1: {
+      post_comments_10: {
         Row: {
           comment_date: string | null
           connection_request_statut: boolean | null
@@ -229,13 +229,13 @@ export type Database = {
         }
         Relationships: []
       }
-      post_comments_5: {
+      post_comments_11: {
         Row: {
           comment_date: string | null
           connection_request_statut: boolean | null
           created_at: string
           id_comment_primary: string
-          linkedin_id: string | null
+          linkedin_id: string
           linkedin_title: string | null
           linkedin_url: string | null
           person_name: string | null
@@ -246,7 +246,7 @@ export type Database = {
           connection_request_statut?: boolean | null
           created_at?: string
           id_comment_primary?: string
-          linkedin_id?: string | null
+          linkedin_id: string
           linkedin_title?: string | null
           linkedin_url?: string | null
           person_name?: string | null
@@ -257,7 +257,187 @@ export type Database = {
           connection_request_statut?: boolean | null
           created_at?: string
           id_comment_primary?: string
-          linkedin_id?: string | null
+          linkedin_id?: string
+          linkedin_title?: string | null
+          linkedin_url?: string | null
+          person_name?: string | null
+          received_dm?: boolean | null
+        }
+        Relationships: []
+      }
+      post_comments_14: {
+        Row: {
+          comment_date: string | null
+          connection_request_statut: boolean | null
+          created_at: string
+          id_comment_primary: string
+          linkedin_id: string
+          linkedin_title: string | null
+          linkedin_url: string | null
+          person_name: string | null
+          received_dm: boolean | null
+        }
+        Insert: {
+          comment_date?: string | null
+          connection_request_statut?: boolean | null
+          created_at?: string
+          id_comment_primary?: string
+          linkedin_id: string
+          linkedin_title?: string | null
+          linkedin_url?: string | null
+          person_name?: string | null
+          received_dm?: boolean | null
+        }
+        Update: {
+          comment_date?: string | null
+          connection_request_statut?: boolean | null
+          created_at?: string
+          id_comment_primary?: string
+          linkedin_id?: string
+          linkedin_title?: string | null
+          linkedin_url?: string | null
+          person_name?: string | null
+          received_dm?: boolean | null
+        }
+        Relationships: []
+      }
+      post_comments_15: {
+        Row: {
+          comment_date: string | null
+          connection_request_statut: boolean | null
+          created_at: string
+          id_comment_primary: string
+          linkedin_id: string
+          linkedin_title: string | null
+          linkedin_url: string | null
+          person_name: string | null
+          received_dm: boolean | null
+        }
+        Insert: {
+          comment_date?: string | null
+          connection_request_statut?: boolean | null
+          created_at?: string
+          id_comment_primary?: string
+          linkedin_id: string
+          linkedin_title?: string | null
+          linkedin_url?: string | null
+          person_name?: string | null
+          received_dm?: boolean | null
+        }
+        Update: {
+          comment_date?: string | null
+          connection_request_statut?: boolean | null
+          created_at?: string
+          id_comment_primary?: string
+          linkedin_id?: string
+          linkedin_title?: string | null
+          linkedin_url?: string | null
+          person_name?: string | null
+          received_dm?: boolean | null
+        }
+        Relationships: []
+      }
+      post_comments_16: {
+        Row: {
+          comment_date: string | null
+          connection_request_statut: boolean | null
+          created_at: string
+          id_comment_primary: string
+          linkedin_id: string
+          linkedin_title: string | null
+          linkedin_url: string | null
+          person_name: string | null
+          received_dm: boolean | null
+        }
+        Insert: {
+          comment_date?: string | null
+          connection_request_statut?: boolean | null
+          created_at?: string
+          id_comment_primary?: string
+          linkedin_id: string
+          linkedin_title?: string | null
+          linkedin_url?: string | null
+          person_name?: string | null
+          received_dm?: boolean | null
+        }
+        Update: {
+          comment_date?: string | null
+          connection_request_statut?: boolean | null
+          created_at?: string
+          id_comment_primary?: string
+          linkedin_id?: string
+          linkedin_title?: string | null
+          linkedin_url?: string | null
+          person_name?: string | null
+          received_dm?: boolean | null
+        }
+        Relationships: []
+      }
+      post_comments_7: {
+        Row: {
+          comment_date: string | null
+          connection_request_statut: boolean | null
+          created_at: string
+          id_comment_primary: string
+          linkedin_id: string
+          linkedin_title: string | null
+          linkedin_url: string | null
+          person_name: string | null
+          received_dm: boolean | null
+        }
+        Insert: {
+          comment_date?: string | null
+          connection_request_statut?: boolean | null
+          created_at?: string
+          id_comment_primary?: string
+          linkedin_id: string
+          linkedin_title?: string | null
+          linkedin_url?: string | null
+          person_name?: string | null
+          received_dm?: boolean | null
+        }
+        Update: {
+          comment_date?: string | null
+          connection_request_statut?: boolean | null
+          created_at?: string
+          id_comment_primary?: string
+          linkedin_id?: string
+          linkedin_title?: string | null
+          linkedin_url?: string | null
+          person_name?: string | null
+          received_dm?: boolean | null
+        }
+        Relationships: []
+      }
+      post_comments_9: {
+        Row: {
+          comment_date: string | null
+          connection_request_statut: boolean | null
+          created_at: string
+          id_comment_primary: string
+          linkedin_id: string
+          linkedin_title: string | null
+          linkedin_url: string | null
+          person_name: string | null
+          received_dm: boolean | null
+        }
+        Insert: {
+          comment_date?: string | null
+          connection_request_statut?: boolean | null
+          created_at?: string
+          id_comment_primary?: string
+          linkedin_id: string
+          linkedin_title?: string | null
+          linkedin_url?: string | null
+          person_name?: string | null
+          received_dm?: boolean | null
+        }
+        Update: {
+          comment_date?: string | null
+          connection_request_statut?: boolean | null
+          created_at?: string
+          id_comment_primary?: string
+          linkedin_id?: string
           linkedin_title?: string | null
           linkedin_url?: string | null
           person_name?: string | null
