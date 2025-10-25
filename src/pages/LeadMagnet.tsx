@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircle, TrendingUp, Users, ExternalLink, Play } from "lucide-react";
+import { MessageCircle, TrendingUp, Users, ExternalLink, Play, Filter } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -33,6 +33,7 @@ export default function LeadMagnet() {
   const [commentsData, setCommentsData] = useState<Record<number, CommentsCount>>({});
   const [totalLeads, setTotalLeads] = useState(0);
   const [loadingPostId, setLoadingPostId] = useState<number | null>(null);
+  const [filter, setFilter] = useState<'all' | 'with-url' | 'without-url'>('all');
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -164,6 +165,12 @@ export default function LeadMagnet() {
     }
   };
 
+  const filteredPosts = posts.filter(post => {
+    if (filter === 'with-url') return post.Url_lead_magnet;
+    if (filter === 'without-url') return !post.Url_lead_magnet;
+    return true;
+  });
+
   const totalComments = Object.values(commentsData).reduce((sum, data) => sum + data.total, 0);
   const totalReceivedDM = Object.values(commentsData).reduce((sum, data) => sum + data.received_dm, 0);
   const totalConnectionRequests = Object.values(commentsData).reduce((sum, data) => sum + data.connection_request, 0);
@@ -278,15 +285,42 @@ export default function LeadMagnet() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {/* Filter Bar */}
+          <div className="flex items-center gap-2 mb-6 p-3 bg-muted/50 rounded-lg">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-foreground mr-2">Filtrer:</span>
+            <Button
+              variant={filter === 'all' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setFilter('all')}
+            >
+              Tous ({posts.length})
+            </Button>
+            <Button
+              variant={filter === 'with-url' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setFilter('with-url')}
+            >
+              Avec URL Lead Magnet ({posts.filter(p => p.Url_lead_magnet).length})
+            </Button>
+            <Button
+              variant={filter === 'without-url' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setFilter('without-url')}
+            >
+              Sans URL Lead Magnet ({posts.filter(p => !p.Url_lead_magnet).length})
+            </Button>
+          </div>
+
           <div className="space-y-4">
-            {posts.length === 0 ? (
+            {filteredPosts.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>Aucun post avec table créée</p>
                 <p className="text-sm">Les posts doivent avoir une table de commentaires créée</p>
               </div>
             ) : (
-              posts.map((post) => {
+              filteredPosts.map((post) => {
                 const comments = commentsData[post.id] || { 
                   total: 0, 
                   received_dm: 0, 
