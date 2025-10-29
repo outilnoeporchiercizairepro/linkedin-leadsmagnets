@@ -7,13 +7,11 @@ import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/ui/logo";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -32,35 +30,18 @@ export default function Login() {
     setLoading(true);
 
     try {
-      if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/dashboard`
-          }
-        });
-        
-        if (error) throw error;
-        
-        toast({
-          title: "Compte créé !",
-          description: "Vérifiez votre email pour confirmer votre compte.",
-        });
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        
-        if (error) throw error;
-        
-        navigate("/dashboard");
-      }
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) throw error;
+      
+      navigate("/dashboard");
     } catch (error: any) {
       toast({
-        title: "Erreur",
-        description: error.message || "Une erreur est survenue",
+        title: "Erreur de connexion",
+        description: error.message || "Email ou mot de passe incorrect",
         variant: "destructive",
       });
     } finally {
@@ -77,19 +58,12 @@ export default function Login() {
           </div>
           <div>
             <CardDescription className="text-muted-foreground">
-              {isSignUp ? "Créez votre compte" : "Connectez-vous pour booster votre présence LinkedIn"}
+              Connectez-vous pour booster votre présence LinkedIn
             </CardDescription>
           </div>
         </CardHeader>
         
         <CardContent>
-          <Tabs value={isSignUp ? "signup" : "login"} onValueChange={(v) => setIsSignUp(v === "signup")} className="mb-4">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Connexion</TabsTrigger>
-              <TabsTrigger value="signup">Inscription</TabsTrigger>
-            </TabsList>
-          </Tabs>
-
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -118,7 +92,7 @@ export default function Login() {
             </div>
             
             <Button type="submit" className="w-full bg-gradient-primary hover:bg-primary-dark" disabled={loading}>
-              {loading ? "Chargement..." : (isSignUp ? "S'inscrire" : "Se connecter")}
+              {loading ? "Connexion..." : "Se connecter"}
             </Button>
           </form>
         </CardContent>
