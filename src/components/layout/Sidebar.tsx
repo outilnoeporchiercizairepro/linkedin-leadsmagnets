@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { 
   LayoutDashboard, 
   PenTool, 
@@ -13,10 +13,14 @@ import {
   List,
   FileText,
   TrendingUp,
-  Target
+  Target,
+  LogOut
 } from "lucide-react";
 import { useState } from "react";
 import { Logo } from "@/components/ui/logo";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const navigation = [
   { 
@@ -57,6 +61,21 @@ const navigation = [
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [expandedSections, setExpandedSections] = useState<string[]>(['Création de contenu', 'Veille de contenu', 'Leads']);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de se déconnecter",
+        variant: "destructive",
+      });
+    } else {
+      navigate("/login");
+    }
+  };
 
   const toggleSection = (sectionName: string) => {
     setExpandedSections(prev => 
@@ -164,14 +183,23 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      {!collapsed && (
-        <div className="p-4 border-t border-border">
+      <div className="p-4 border-t border-border space-y-3">
+        <Button
+          variant="ghost"
+          className="w-full justify-start text-muted-foreground hover:text-foreground"
+          onClick={handleLogout}
+        >
+          <LogOut className={`h-5 w-5 ${collapsed ? '' : 'mr-3'}`} />
+          {!collapsed && <span>Déconnexion</span>}
+        </Button>
+        
+        {!collapsed && (
           <div className="text-xs text-muted-foreground flex items-center gap-1">
             <span>LinkedIn Accelerator</span>
             <span className="text-primary">v1.0</span>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
