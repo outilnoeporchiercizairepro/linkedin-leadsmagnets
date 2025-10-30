@@ -64,6 +64,7 @@ export default function ContentWatch() {
       setIsLoading(true);
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      sevenDaysAgo.setHours(0, 0, 0, 0);
 
       const { data, error } = await supabase
         .from('competitor_posts')
@@ -82,13 +83,17 @@ export default function ContentWatch() {
       })) as any[];
 
       // Separate posts into recent (7 days) and older
-      const recent = transformedData?.filter(post => 
-        new Date(post.post_date) >= sevenDaysAgo
-      ) || [];
+      const recent = transformedData?.filter(post => {
+        if (!post.post_date) return false;
+        const postDate = new Date(post.post_date);
+        return postDate >= sevenDaysAgo;
+      }) || [];
       
-      const older = transformedData?.filter(post => 
-        new Date(post.post_date) < sevenDaysAgo
-      ) || [];
+      const older = transformedData?.filter(post => {
+        if (!post.post_date) return true; // Posts sans date vont dans "older"
+        const postDate = new Date(post.post_date);
+        return postDate < sevenDaysAgo;
+      }) || [];
 
       setRecentPosts(recent);
       setOlderPosts(older);
