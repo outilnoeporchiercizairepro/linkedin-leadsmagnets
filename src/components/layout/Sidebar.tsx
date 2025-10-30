@@ -13,7 +13,6 @@ import {
   List,
   FileText,
   TrendingUp,
-  Target,
   LogOut
 } from "lucide-react";
 import { useState } from "react";
@@ -27,11 +26,6 @@ const navigation = [
     name: "Dashboard", 
     href: "/dashboard", 
     icon: LayoutDashboard 
-  },
-  { 
-    name: "Objectifs", 
-    href: "/objectives", 
-    icon: Target 
   },
   { 
     name: "Liste des posts", 

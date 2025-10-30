@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { DashboardLayout } from "./components/layout/DashboardLayout";
 import Dashboard from "./pages/Dashboard";
-import Objectives from "./pages/Objectives";
 import LeadMagnet from "./pages/LeadMagnet";
 import PostsList from "./pages/PostsList";
 import Competitors from "./pages/Competitors";
@@ -36,7 +35,6 @@ const App = () => {
             <Route path="/competitor-posts/:competitorId" element={<CompetitorPosts />} />
             <Route path="/" element={<DashboardLayout />}>
               <Route path="dashboard" element={<Dashboard />} />
-              <Route path="objectives" element={<Objectives />} />
               <Route path="content-watch" element={<ContentWatch />} />
               <Route path="competitors" element={<Competitors />} />
               <Route path="posts" element={<PostsList />} />
