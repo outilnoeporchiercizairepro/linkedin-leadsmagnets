@@ -835,6 +835,7 @@ export type Database = {
       "Posts En Ligne_bapt": {
         Row: {
           added_at: string | null
+          B2B_ou_B2C: string | null
           Caption: string | null
           comments_table_name: string | null
           id: number
@@ -850,6 +851,7 @@ export type Database = {
         }
         Insert: {
           added_at?: string | null
+          B2B_ou_B2C?: string | null
           Caption?: string | null
           comments_table_name?: string | null
           id?: number
@@ -865,6 +867,7 @@ export type Database = {
         }
         Update: {
           added_at?: string | null
+          B2B_ou_B2C?: string | null
           Caption?: string | null
           comments_table_name?: string | null
           id?: number
@@ -883,6 +886,7 @@ export type Database = {
       "Posts En Ligne_imrane": {
         Row: {
           added_at: string | null
+          B2B_ou_B2C: string | null
           caption: string | null
           comments_table_name: string | null
           id: number
@@ -898,6 +902,7 @@ export type Database = {
         }
         Insert: {
           added_at?: string | null
+          B2B_ou_B2C?: string | null
           caption?: string | null
           comments_table_name?: string | null
           id?: number
@@ -913,6 +918,7 @@ export type Database = {
         }
         Update: {
           added_at?: string | null
+          B2B_ou_B2C?: string | null
           caption?: string | null
           comments_table_name?: string | null
           id?: number
