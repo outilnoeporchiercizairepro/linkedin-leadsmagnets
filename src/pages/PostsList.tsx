@@ -36,8 +36,41 @@ export default function PostsList() {
   const [loading, setLoading] = useState(true);
   const [leadMagnetUrls, setLeadMagnetUrls] = useState<{[key: number]: string}>({});
   const [filter, setFilter] = useState<FilterOption>('all');
+  const [isUpdatingTypes, setIsUpdatingTypes] = useState(false);
   const { toast } = useToast();
   const { getTableName, userType } = useUser();
+
+  const updateAllPostsTypes = async () => {
+    setIsUpdatingTypes(true);
+    try {
+      const tableName = getTableName("Posts En Ligne");
+      
+      // Mettre à jour tous les posts sans B2B_ou_B2C ou qui ne sont pas B2B
+      const { error } = await supabase
+        .from(tableName as any)
+        .update({ B2B_ou_B2C: 'All' } as any)
+        .or('B2B_ou_B2C.is.null,B2B_ou_B2C.neq.B2B');
+
+      if (error) throw error;
+
+      toast({
+        title: "Succès",
+        description: "Tous les posts ont été mis à jour avec le type 'All'",
+      });
+      
+      // Recharger les posts
+      await fetchPosts();
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de mettre à jour les posts",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdatingTypes(false);
+    }
+  };
 
   useEffect(() => {
     fetchPosts();
@@ -255,6 +288,14 @@ export default function PostsList() {
             <SelectItem value="b2b">B2B</SelectItem>
           </SelectContent>
         </Select>
+        <Button 
+          onClick={updateAllPostsTypes} 
+          disabled={isUpdatingTypes}
+          variant="outline"
+          size="sm"
+        >
+          {isUpdatingTypes ? "Mise à jour..." : "Mettre tous les posts à 'All'"}
+        </Button>
       </div>
 
       {posts.length === 0 ? (
