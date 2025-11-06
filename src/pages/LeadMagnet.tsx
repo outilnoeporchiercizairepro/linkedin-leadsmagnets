@@ -156,6 +156,7 @@ export default function LeadMagnet() {
           keyword: post.keyword,
           type_post: post.B2B_ou_B2C,
           account_linkedin_id: accountLinkedinId,
+          leads_table_name: getTableName("Leads Linkedin"),
         }),
       });
 
