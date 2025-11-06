@@ -10,7 +10,19 @@ import { useToast } from "@/hooks/use-toast";
 import { Tables } from "@/integrations/supabase/types";
 import { useUser } from "@/contexts/UserContext";
 
-type CompetitorPost = Tables<'competitor_posts'>;
+type CompetitorPost = {
+  id: number;
+  competitor_id: number;
+  caption: string;
+  content_type: string;
+  post_date: string;
+  likes_count: number;
+  comments_count: number;
+  repost_count: number;
+  post_url: string;
+  media_urls: string;
+  keywords: string[];
+};
 
 interface Competitor {
   id: number;

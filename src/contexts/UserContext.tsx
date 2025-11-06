@@ -1,4 +1,6 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { User, Session } from "@supabase/supabase-js";
 
 type UserType = "bapt" | "imrane";
 
@@ -9,22 +11,89 @@ type TableName =
   | "competitor_posts";
 
 interface UserContextType {
-  selectedUser: UserType;
-  setSelectedUser: (user: UserType) => void;
+  user: User | null;
+  session: Session | null;
+  userType: UserType | null;
+  loading: boolean;
   getTableName: (baseName: TableName) => string;
+  signOut: () => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export function UserProvider({ children }: { children: ReactNode }) {
-  const [selectedUser, setSelectedUser] = useState<UserType>("bapt");
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [userType, setUserType] = useState<UserType | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Set up auth state listener first
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          setTimeout(() => {
+            fetchUserProfile(session.user.id);
+          }, 0);
+        } else {
+          setUserType(null);
+          setLoading(false);
+        }
+      }
+    );
+
+    // Then check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        fetchUserProfile(session.user.id);
+      } else {
+        setLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("user_type")
+        .eq("id", userId)
+        .single();
+
+      if (error) {
+        console.error("Error fetching profile:", error);
+      } else if (data) {
+        setUserType(data.user_type as UserType);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getTableName = (baseName: TableName): any => {
-    return `${baseName}_${selectedUser}` as any;
+    if (!userType) return baseName as any;
+    return `${baseName}_${userType}` as any;
+  };
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setSession(null);
+    setUserType(null);
   };
 
   return (
-    <UserContext.Provider value={{ selectedUser, setSelectedUser, getTableName }}>
+    <UserContext.Provider value={{ user, session, userType, loading, getTableName, signOut }}>
       {children}
     </UserContext.Provider>
   );

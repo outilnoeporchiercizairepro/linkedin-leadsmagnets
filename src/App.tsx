@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { DashboardLayout } from "./components/layout/DashboardLayout";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
 import LeadMagnet from "./pages/LeadMagnet";
 import PostsList from "./pages/PostsList";
@@ -11,6 +12,7 @@ import Competitors from "./pages/Competitors";
 import CompetitorPosts from "./pages/CompetitorPosts";
 import Leads from "./pages/Leads";
 import ContentWatch from "./pages/ContentWatch";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -31,9 +33,24 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
+            <Route path="/auth" element={<Auth />} />
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/competitor-posts/:competitorId" element={<CompetitorPosts />} />
-            <Route path="/" element={<DashboardLayout />}>
+            <Route
+              path="/competitor-posts/:competitorId"
+              element={
+                <ProtectedRoute>
+                  <CompetitorPosts />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout />
+                </ProtectedRoute>
+              }
+            >
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="content-watch" element={<ContentWatch />} />
               <Route path="competitors" element={<Competitors />} />

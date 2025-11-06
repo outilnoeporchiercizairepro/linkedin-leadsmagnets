@@ -18,7 +18,8 @@ import {
 import { useState } from "react";
 import { Logo } from "@/components/ui/logo";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+import { Badge } from "@/components/ui/badge";
+import { useUser } from "@/contexts/UserContext";
 import { useToast } from "@/hooks/use-toast";
 
 const navigation = [
@@ -57,18 +58,11 @@ export function Sidebar() {
   const [expandedSections, setExpandedSections] = useState<string[]>(['Création de contenu', 'Veille de contenu', 'Leads']);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { userType, signOut, user } = useUser();
 
   const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast({
-        title: "Erreur",
-        description: "Impossible de se déconnecter",
-        variant: "destructive",
-      });
-    } else {
-      navigate("/login");
-    }
+    await signOut();
+    navigate("/auth");
   };
 
   const toggleSection = (sectionName: string) => {
@@ -100,6 +94,16 @@ export function Sidebar() {
             </button>
           )}
         </div>
+        {!collapsed && userType && (
+          <div className="mt-3 flex flex-col gap-1">
+            <Badge variant="secondary" className="text-xs w-fit">
+              {userType === "bapt" ? "Baptiste" : "Imrane"}
+            </Badge>
+            <span className="text-xs text-muted-foreground truncate">
+              {user?.email}
+            </span>
+          </div>
+        )}
         {/* Bouton pour rouvrir la sidebar quand elle est fermée */}
         {collapsed && (
           <button

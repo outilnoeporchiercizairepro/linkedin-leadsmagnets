@@ -1,7 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useUser } from "@/contexts/UserContext";
 
 export const useRecentActivity = () => {
+  const { getTableName } = useUser();
+  
   return useQuery({
     queryKey: ["recent-activity"],
     queryFn: async () => {
@@ -9,13 +12,13 @@ export const useRecentActivity = () => {
 
       // Get recent published posts
       const { data: recentPosts } = await supabase
-        .from("Posts En Ligne")
+        .from(getTableName("Posts En Ligne") as any)
         .select("added_at, Caption")
         .order("added_at", { ascending: false })
         .limit(2);
 
       if (recentPosts) {
-        recentPosts.forEach((post) => {
+        (recentPosts as any[]).forEach((post) => {
           activities.push({
             action: "Nouveau post publié",
             time: formatTimeAgo(post.added_at),
@@ -26,13 +29,13 @@ export const useRecentActivity = () => {
 
       // Get recent leads
       const { data: recentLeads } = await supabase
-        .from("Leads Linkedin")
+        .from(getTableName("Leads Linkedin") as any)
         .select("date")
         .order("date", { ascending: false })
         .limit(2);
 
       if (recentLeads) {
-        recentLeads.forEach((lead) => {
+        (recentLeads as any[]).forEach((lead) => {
           activities.push({
             action: "Nouveau lead généré",
             time: formatTimeAgo(lead.date),
@@ -43,13 +46,13 @@ export const useRecentActivity = () => {
 
       // Get recent competitors
       const { data: recentCompetitors } = await supabase
-        .from("competitors")
+        .from(getTableName("competitors") as any)
         .select("created_at, name")
         .order("created_at", { ascending: false })
         .limit(1);
 
       if (recentCompetitors) {
-        recentCompetitors.forEach((competitor) => {
+        (recentCompetitors as any[]).forEach((competitor) => {
           activities.push({
             action: `Concurrent ajouté: ${competitor.name}`,
             time: formatTimeAgo(competitor.created_at),

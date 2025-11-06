@@ -14,7 +14,7 @@ export type Database = {
   }
   public: {
     Tables: {
-      competitor_posts: {
+      competitor_posts_bapt: {
         Row: {
           caption: string | null
           comments_count: number | null
@@ -74,12 +74,69 @@ export type Database = {
             foreignKeyName: "competitor_posts_competitor_id_fkey"
             columns: ["competitor_id"]
             isOneToOne: false
-            referencedRelation: "competitors"
+            referencedRelation: "competitors_bapt"
             referencedColumns: ["id"]
           },
         ]
       }
-      competitors: {
+      competitor_posts_imrane: {
+        Row: {
+          caption: string | null
+          comments_count: number | null
+          competitor_id: number
+          content_type: string | null
+          created_at: string
+          id: number
+          keywords: string[] | null
+          likes_count: number | null
+          media_urls: string | null
+          post_date: string | null
+          post_id_linkedin: string | null
+          post_url: string | null
+          repost_count: number | null
+          title_carousel: string | null
+          updated_at: string
+          urn_post_id: string | null
+        }
+        Insert: {
+          caption?: string | null
+          comments_count?: number | null
+          competitor_id: number
+          content_type?: string | null
+          created_at?: string
+          id?: number
+          keywords?: string[] | null
+          likes_count?: number | null
+          media_urls?: string | null
+          post_date?: string | null
+          post_id_linkedin?: string | null
+          post_url?: string | null
+          repost_count?: number | null
+          title_carousel?: string | null
+          updated_at?: string
+          urn_post_id?: string | null
+        }
+        Update: {
+          caption?: string | null
+          comments_count?: number | null
+          competitor_id?: number
+          content_type?: string | null
+          created_at?: string
+          id?: number
+          keywords?: string[] | null
+          likes_count?: number | null
+          media_urls?: string | null
+          post_date?: string | null
+          post_id_linkedin?: string | null
+          post_url?: string | null
+          repost_count?: number | null
+          title_carousel?: string | null
+          updated_at?: string
+          urn_post_id?: string | null
+        }
+        Relationships: []
+      }
+      competitors_bapt: {
         Row: {
           a_propos: string | null
           connection_count: number | null
@@ -142,6 +199,193 @@ export type Database = {
         }
         Relationships: []
       }
+      competitors_imrane: {
+        Row: {
+          a_propos: string | null
+          connection_count: number | null
+          created_at: string
+          entreprise: string | null
+          follower_count: number | null
+          headline: string | null
+          id: number
+          industry: string | null
+          last_activity_date: string | null
+          location: string | null
+          name: string | null
+          notes: string | null
+          photo_profil: string | null
+          posts_table_name: string | null
+          public_identifier: string | null
+          status: string | null
+          updated_at: string
+          url: string | null
+        }
+        Insert: {
+          a_propos?: string | null
+          connection_count?: number | null
+          created_at?: string
+          entreprise?: string | null
+          follower_count?: number | null
+          headline?: string | null
+          id?: number
+          industry?: string | null
+          last_activity_date?: string | null
+          location?: string | null
+          name?: string | null
+          notes?: string | null
+          photo_profil?: string | null
+          posts_table_name?: string | null
+          public_identifier?: string | null
+          status?: string | null
+          updated_at?: string
+          url?: string | null
+        }
+        Update: {
+          a_propos?: string | null
+          connection_count?: number | null
+          created_at?: string
+          entreprise?: string | null
+          follower_count?: number | null
+          headline?: string | null
+          id?: number
+          industry?: string | null
+          last_activity_date?: string | null
+          location?: string | null
+          name?: string | null
+          notes?: string | null
+          photo_profil?: string | null
+          posts_table_name?: string | null
+          public_identifier?: string | null
+          status?: string | null
+          updated_at?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
+      divyanshi_sharma_posts: {
+        Row: {
+          comments: number | null
+          competitor_id: number
+          created_at: string
+          date: string | null
+          description: string | null
+          full_urn: string | null
+          id: number
+          reposts: number | null
+          thumbnail: string | null
+          title: string | null
+          total_reactions: number | null
+          type_post: string | null
+          updated_at: string
+          url: string | null
+          urn: string | null
+        }
+        Insert: {
+          comments?: number | null
+          competitor_id: number
+          created_at?: string
+          date?: string | null
+          description?: string | null
+          full_urn?: string | null
+          id?: number
+          reposts?: number | null
+          thumbnail?: string | null
+          title?: string | null
+          total_reactions?: number | null
+          type_post?: string | null
+          updated_at?: string
+          url?: string | null
+          urn?: string | null
+        }
+        Update: {
+          comments?: number | null
+          competitor_id?: number
+          created_at?: string
+          date?: string | null
+          description?: string | null
+          full_urn?: string | null
+          id?: number
+          reposts?: number | null
+          thumbnail?: string | null
+          title?: string | null
+          total_reactions?: number | null
+          type_post?: string | null
+          updated_at?: string
+          url?: string | null
+          urn?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "divyanshi_sharma_posts_competitor_id_fkey"
+            columns: ["competitor_id"]
+            isOneToOne: false
+            referencedRelation: "competitors_bapt"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      eric_djavid_posts: {
+        Row: {
+          comments: number | null
+          competitor_id: number
+          created_at: string
+          date: string | null
+          description: string | null
+          full_urn: string | null
+          id: number
+          reposts: number | null
+          thumbnail: string | null
+          title: string | null
+          total_reactions: number | null
+          type_post: string | null
+          updated_at: string
+          url: string | null
+          urn: string | null
+        }
+        Insert: {
+          comments?: number | null
+          competitor_id: number
+          created_at?: string
+          date?: string | null
+          description?: string | null
+          full_urn?: string | null
+          id?: number
+          reposts?: number | null
+          thumbnail?: string | null
+          title?: string | null
+          total_reactions?: number | null
+          type_post?: string | null
+          updated_at?: string
+          url?: string | null
+          urn?: string | null
+        }
+        Update: {
+          comments?: number | null
+          competitor_id?: number
+          created_at?: string
+          date?: string | null
+          description?: string | null
+          full_urn?: string | null
+          id?: number
+          reposts?: number | null
+          thumbnail?: string | null
+          title?: string | null
+          total_reactions?: number | null
+          type_post?: string | null
+          updated_at?: string
+          url?: string | null
+          urn?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "eric_djavid_posts_competitor_id_fkey"
+            columns: ["competitor_id"]
+            isOneToOne: false
+            referencedRelation: "competitors_bapt"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       exemple_redaction_post: {
         Row: {
           created_at: string
@@ -160,7 +404,7 @@ export type Database = {
         }
         Relationships: []
       }
-      "Leads Linkedin": {
+      "Leads Linkedin_bapt": {
         Row: {
           connection_status: string | null
           date: string | null
@@ -192,6 +436,163 @@ export type Database = {
           url?: string | null
         }
         Relationships: []
+      }
+      "Leads Linkedin_imrane": {
+        Row: {
+          connection_status: string | null
+          date: string | null
+          dm_status: string | null
+          entreprise: string | null
+          headline: string | null
+          id_linkedin: string
+          name: string | null
+          url: string | null
+        }
+        Insert: {
+          connection_status?: string | null
+          date?: string | null
+          dm_status?: string | null
+          entreprise?: string | null
+          headline?: string | null
+          id_linkedin: string
+          name?: string | null
+          url?: string | null
+        }
+        Update: {
+          connection_status?: string | null
+          date?: string | null
+          dm_status?: string | null
+          entreprise?: string | null
+          headline?: string | null
+          id_linkedin?: string
+          name?: string | null
+          url?: string | null
+        }
+        Relationships: []
+      }
+      maxim_delavoet_posts: {
+        Row: {
+          comments: number | null
+          competitor_id: number
+          created_at: string
+          date: string | null
+          description: string | null
+          full_urn: string | null
+          id: number
+          reposts: number | null
+          thumbnail: string | null
+          title: string | null
+          total_reactions: number | null
+          type_post: string | null
+          updated_at: string
+          url: string | null
+          urn: string | null
+        }
+        Insert: {
+          comments?: number | null
+          competitor_id: number
+          created_at?: string
+          date?: string | null
+          description?: string | null
+          full_urn?: string | null
+          id?: number
+          reposts?: number | null
+          thumbnail?: string | null
+          title?: string | null
+          total_reactions?: number | null
+          type_post?: string | null
+          updated_at?: string
+          url?: string | null
+          urn?: string | null
+        }
+        Update: {
+          comments?: number | null
+          competitor_id?: number
+          created_at?: string
+          date?: string | null
+          description?: string | null
+          full_urn?: string | null
+          id?: number
+          reposts?: number | null
+          thumbnail?: string | null
+          title?: string | null
+          total_reactions?: number | null
+          type_post?: string | null
+          updated_at?: string
+          url?: string | null
+          urn?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maxim_delavoet_posts_competitor_id_fkey"
+            columns: ["competitor_id"]
+            isOneToOne: false
+            referencedRelation: "competitors_bapt"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mike_futia_posts: {
+        Row: {
+          comments: number | null
+          competitor_id: number
+          created_at: string
+          date: string | null
+          description: string | null
+          full_urn: string | null
+          id: number
+          reposts: number | null
+          thumbnail: string | null
+          title: string | null
+          total_reactions: number | null
+          type_post: string | null
+          updated_at: string
+          url: string | null
+          urn: string | null
+        }
+        Insert: {
+          comments?: number | null
+          competitor_id: number
+          created_at?: string
+          date?: string | null
+          description?: string | null
+          full_urn?: string | null
+          id?: number
+          reposts?: number | null
+          thumbnail?: string | null
+          title?: string | null
+          total_reactions?: number | null
+          type_post?: string | null
+          updated_at?: string
+          url?: string | null
+          urn?: string | null
+        }
+        Update: {
+          comments?: number | null
+          competitor_id?: number
+          created_at?: string
+          date?: string | null
+          description?: string | null
+          full_urn?: string | null
+          id?: number
+          reposts?: number | null
+          thumbnail?: string | null
+          title?: string | null
+          total_reactions?: number | null
+          type_post?: string | null
+          updated_at?: string
+          url?: string | null
+          urn?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mike_futia_posts_competitor_id_fkey"
+            columns: ["competitor_id"]
+            isOneToOne: false
+            referencedRelation: "competitors_bapt"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       post_comments_10: {
         Row: {
@@ -373,6 +774,258 @@ export type Database = {
         }
         Relationships: []
       }
+      post_comments_19: {
+        Row: {
+          comment_date: string | null
+          connection_request_statut: boolean | null
+          created_at: string
+          id_comment_primary: string
+          linkedin_id: string
+          linkedin_title: string | null
+          linkedin_url: string | null
+          person_name: string | null
+          received_dm: boolean | null
+        }
+        Insert: {
+          comment_date?: string | null
+          connection_request_statut?: boolean | null
+          created_at?: string
+          id_comment_primary?: string
+          linkedin_id: string
+          linkedin_title?: string | null
+          linkedin_url?: string | null
+          person_name?: string | null
+          received_dm?: boolean | null
+        }
+        Update: {
+          comment_date?: string | null
+          connection_request_statut?: boolean | null
+          created_at?: string
+          id_comment_primary?: string
+          linkedin_id?: string
+          linkedin_title?: string | null
+          linkedin_url?: string | null
+          person_name?: string | null
+          received_dm?: boolean | null
+        }
+        Relationships: []
+      }
+      post_comments_20: {
+        Row: {
+          comment_date: string | null
+          connection_request_statut: boolean | null
+          created_at: string
+          id_comment_primary: string
+          linkedin_id: string
+          linkedin_title: string | null
+          linkedin_url: string | null
+          person_name: string | null
+          received_dm: boolean | null
+        }
+        Insert: {
+          comment_date?: string | null
+          connection_request_statut?: boolean | null
+          created_at?: string
+          id_comment_primary?: string
+          linkedin_id: string
+          linkedin_title?: string | null
+          linkedin_url?: string | null
+          person_name?: string | null
+          received_dm?: boolean | null
+        }
+        Update: {
+          comment_date?: string | null
+          connection_request_statut?: boolean | null
+          created_at?: string
+          id_comment_primary?: string
+          linkedin_id?: string
+          linkedin_title?: string | null
+          linkedin_url?: string | null
+          person_name?: string | null
+          received_dm?: boolean | null
+        }
+        Relationships: []
+      }
+      post_comments_21: {
+        Row: {
+          comment_date: string | null
+          connection_request_statut: boolean | null
+          created_at: string
+          id_comment_primary: string
+          linkedin_id: string
+          linkedin_title: string | null
+          linkedin_url: string | null
+          person_name: string | null
+          received_dm: boolean | null
+        }
+        Insert: {
+          comment_date?: string | null
+          connection_request_statut?: boolean | null
+          created_at?: string
+          id_comment_primary?: string
+          linkedin_id: string
+          linkedin_title?: string | null
+          linkedin_url?: string | null
+          person_name?: string | null
+          received_dm?: boolean | null
+        }
+        Update: {
+          comment_date?: string | null
+          connection_request_statut?: boolean | null
+          created_at?: string
+          id_comment_primary?: string
+          linkedin_id?: string
+          linkedin_title?: string | null
+          linkedin_url?: string | null
+          person_name?: string | null
+          received_dm?: boolean | null
+        }
+        Relationships: []
+      }
+      post_comments_25: {
+        Row: {
+          comment_date: string | null
+          connection_request_statut: boolean | null
+          created_at: string
+          id_comment_primary: string
+          linkedin_id: string
+          linkedin_title: string | null
+          linkedin_url: string | null
+          person_name: string | null
+          received_dm: boolean | null
+        }
+        Insert: {
+          comment_date?: string | null
+          connection_request_statut?: boolean | null
+          created_at?: string
+          id_comment_primary?: string
+          linkedin_id: string
+          linkedin_title?: string | null
+          linkedin_url?: string | null
+          person_name?: string | null
+          received_dm?: boolean | null
+        }
+        Update: {
+          comment_date?: string | null
+          connection_request_statut?: boolean | null
+          created_at?: string
+          id_comment_primary?: string
+          linkedin_id?: string
+          linkedin_title?: string | null
+          linkedin_url?: string | null
+          person_name?: string | null
+          received_dm?: boolean | null
+        }
+        Relationships: []
+      }
+      post_comments_26: {
+        Row: {
+          comment_date: string | null
+          connection_request_statut: boolean | null
+          created_at: string
+          id_comment_primary: string
+          linkedin_id: string
+          linkedin_title: string | null
+          linkedin_url: string | null
+          person_name: string | null
+          received_dm: boolean | null
+        }
+        Insert: {
+          comment_date?: string | null
+          connection_request_statut?: boolean | null
+          created_at?: string
+          id_comment_primary?: string
+          linkedin_id: string
+          linkedin_title?: string | null
+          linkedin_url?: string | null
+          person_name?: string | null
+          received_dm?: boolean | null
+        }
+        Update: {
+          comment_date?: string | null
+          connection_request_statut?: boolean | null
+          created_at?: string
+          id_comment_primary?: string
+          linkedin_id?: string
+          linkedin_title?: string | null
+          linkedin_url?: string | null
+          person_name?: string | null
+          received_dm?: boolean | null
+        }
+        Relationships: []
+      }
+      post_comments_31: {
+        Row: {
+          comment_date: string | null
+          connection_request_statut: boolean | null
+          created_at: string
+          id_comment_primary: string
+          linkedin_id: string
+          linkedin_title: string | null
+          linkedin_url: string | null
+          person_name: string | null
+          received_dm: boolean | null
+        }
+        Insert: {
+          comment_date?: string | null
+          connection_request_statut?: boolean | null
+          created_at?: string
+          id_comment_primary?: string
+          linkedin_id: string
+          linkedin_title?: string | null
+          linkedin_url?: string | null
+          person_name?: string | null
+          received_dm?: boolean | null
+        }
+        Update: {
+          comment_date?: string | null
+          connection_request_statut?: boolean | null
+          created_at?: string
+          id_comment_primary?: string
+          linkedin_id?: string
+          linkedin_title?: string | null
+          linkedin_url?: string | null
+          person_name?: string | null
+          received_dm?: boolean | null
+        }
+        Relationships: []
+      }
+      post_comments_33: {
+        Row: {
+          comment_date: string | null
+          connection_request_statut: boolean | null
+          created_at: string
+          id_comment_primary: string
+          linkedin_id: string
+          linkedin_title: string | null
+          linkedin_url: string | null
+          person_name: string | null
+          received_dm: boolean | null
+        }
+        Insert: {
+          comment_date?: string | null
+          connection_request_statut?: boolean | null
+          created_at?: string
+          id_comment_primary?: string
+          linkedin_id: string
+          linkedin_title?: string | null
+          linkedin_url?: string | null
+          person_name?: string | null
+          received_dm?: boolean | null
+        }
+        Update: {
+          comment_date?: string | null
+          connection_request_statut?: boolean | null
+          created_at?: string
+          id_comment_primary?: string
+          linkedin_id?: string
+          linkedin_title?: string | null
+          linkedin_url?: string | null
+          person_name?: string | null
+          received_dm?: boolean | null
+        }
+        Relationships: []
+      }
       post_comments_7: {
         Row: {
           comment_date: string | null
@@ -472,7 +1125,7 @@ export type Database = {
         }
         Relationships: []
       }
-      "Posts En Ligne": {
+      "Posts En Ligne_bapt": {
         Row: {
           added_at: string | null
           Caption: string | null
@@ -519,6 +1172,140 @@ export type Database = {
           urn_post_id?: string | null
         }
         Relationships: []
+      }
+      "Posts En Ligne_imrane": {
+        Row: {
+          added_at: string | null
+          caption: string | null
+          comments_table_name: string | null
+          id: number
+          keyword: string | null
+          leadmagnet: boolean | null
+          media: string | null
+          post_id: number | null
+          post_url: string | null
+          table_exist: boolean | null
+          type_post: string | null
+          url_lead_magnet: string | null
+          urn_post_id: string | null
+        }
+        Insert: {
+          added_at?: string | null
+          caption?: string | null
+          comments_table_name?: string | null
+          id?: number
+          keyword?: string | null
+          leadmagnet?: boolean | null
+          media?: string | null
+          post_id?: number | null
+          post_url?: string | null
+          table_exist?: boolean | null
+          type_post?: string | null
+          url_lead_magnet?: string | null
+          urn_post_id?: string | null
+        }
+        Update: {
+          added_at?: string | null
+          caption?: string | null
+          comments_table_name?: string | null
+          id?: number
+          keyword?: string | null
+          leadmagnet?: boolean | null
+          media?: string | null
+          post_id?: number | null
+          post_url?: string | null
+          table_exist?: boolean | null
+          type_post?: string | null
+          url_lead_magnet?: string | null
+          urn_post_id?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          updated_at: string
+          user_type: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id: string
+          updated_at?: string
+          user_type: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          updated_at?: string
+          user_type?: string
+        }
+        Relationships: []
+      }
+      r_my_ren_corail_posts: {
+        Row: {
+          comments: number | null
+          competitor_id: number
+          created_at: string
+          date: string | null
+          description: string | null
+          full_urn: string | null
+          id: number
+          reposts: number | null
+          thumbnail: string | null
+          title: string | null
+          total_reactions: number | null
+          type_post: string | null
+          updated_at: string
+          url: string | null
+          urn: string | null
+        }
+        Insert: {
+          comments?: number | null
+          competitor_id: number
+          created_at?: string
+          date?: string | null
+          description?: string | null
+          full_urn?: string | null
+          id?: number
+          reposts?: number | null
+          thumbnail?: string | null
+          title?: string | null
+          total_reactions?: number | null
+          type_post?: string | null
+          updated_at?: string
+          url?: string | null
+          urn?: string | null
+        }
+        Update: {
+          comments?: number | null
+          competitor_id?: number
+          created_at?: string
+          date?: string | null
+          description?: string | null
+          full_urn?: string | null
+          id?: number
+          reposts?: number | null
+          thumbnail?: string | null
+          title?: string | null
+          total_reactions?: number | null
+          type_post?: string | null
+          updated_at?: string
+          url?: string | null
+          urn?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "r_my_ren_corail_posts_competitor_id_fkey"
+            columns: ["competitor_id"]
+            isOneToOne: false
+            referencedRelation: "competitors_bapt"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
