@@ -154,7 +154,7 @@ export default function LeadMagnet() {
           url_lead_magnet: post.Url_lead_magnet,
           comments_table_name: post.comments_table_name,
           keyword: post.keyword,
-          user_type: userType,
+          type_post: post.B2B_ou_B2C,
           account_linkedin_id: accountLinkedinId,
         }),
       });
