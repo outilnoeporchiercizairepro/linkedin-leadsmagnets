@@ -56,12 +56,12 @@ export default function Competitors() {
     try {
       const tableName = getTableName("competitors");
       const { data, error } = await supabase
-        .from(tableName)
+        .from(tableName as any)
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setCompetitors(data as Competitor[] || []);
+      setCompetitors((data || []) as unknown as Competitor[]);
     } catch (error) {
       console.error('Error fetching competitors:', error);
       toast({
@@ -78,7 +78,7 @@ export default function Competitors() {
     try {
       const tableName = getTableName("competitors");
       const { error } = await supabase
-        .from(tableName)
+        .from(tableName as any)
         .delete()
         .eq('id', id);
 

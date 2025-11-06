@@ -45,7 +45,7 @@ export default function Leads() {
     try {
       const tableName = getTableName("Leads Linkedin");
       const { data, error } = await supabase
-        .from(tableName)
+        .from(tableName as any)
         .select('*')
         .order('date', { ascending: false });
 
@@ -58,7 +58,7 @@ export default function Leads() {
         });
         return;
       }
-      setLeads(data as Lead[] || []);
+      setLeads((data || []) as unknown as Lead[]);
     } catch (error) {
       console.error('Error fetching leads:', error);
     } finally {

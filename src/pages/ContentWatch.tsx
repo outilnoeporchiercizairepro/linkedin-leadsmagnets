@@ -71,7 +71,7 @@ export default function ContentWatch() {
       sevenDaysAgo.setHours(0, 0, 0, 0);
 
       const { data, error } = await supabase
-        .from(tableName)
+        .from(tableName as any)
         .select(`
           *,
           ${competitorsTable}!inner(name, photo_profil, entreprise)
@@ -81,7 +81,7 @@ export default function ContentWatch() {
       if (error) throw error;
 
       // Transform data to match our interface
-      const transformedData = data?.map(post => ({
+      const transformedData = (data as any)?.map((post: any) => ({
         ...post,
         competitor: Array.isArray(post[competitorsTable]) ? post[competitorsTable][0] : post[competitorsTable]
       })) as CompetitorPost[];

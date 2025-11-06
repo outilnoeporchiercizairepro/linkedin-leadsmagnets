@@ -38,13 +38,13 @@ export function CompetitorPostsDialog({ open, onOpenChange, competitor }: Compet
     try {
       const tableName = getTableName("competitor_posts");
       const { data, error } = await supabase
-        .from(tableName)
+        .from(tableName as any)
         .select('*')
         .eq('competitor_id', competitor.id)
         .order('post_date', { ascending: false });
 
       if (error) throw error;
-      setPosts(data as CompetitorPost[] || []);
+      setPosts((data || []) as unknown as CompetitorPost[]);
     } catch (error) {
       console.error('Error fetching posts:', error);
       toast({

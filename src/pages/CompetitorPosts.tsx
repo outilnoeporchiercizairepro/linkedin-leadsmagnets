@@ -41,7 +41,7 @@ export default function CompetitorPosts() {
       
       // Fetch competitor info
       const { data: competitorData, error: competitorError } = await supabase
-        .from(competitorsTable)
+        .from(competitorsTable as any)
         .select('id, name, headline, photo_profil, entreprise')
         .eq('id', parseInt(competitorId!))
         .maybeSingle();
@@ -56,11 +56,11 @@ export default function CompetitorPosts() {
         return;
       }
       
-      setCompetitor(competitorData as Competitor);
+      setCompetitor(competitorData as unknown as Competitor);
 
       // Fetch competitor posts
       const { data: postsData, error: postsError } = await supabase
-        .from(postsTable)
+        .from(postsTable as any)
         .select('*')
         .eq('competitor_id', parseInt(competitorId!))
         .order('post_date', { ascending: false });
@@ -75,7 +75,7 @@ export default function CompetitorPosts() {
         return;
       }
       
-      setPosts(postsData as CompetitorPost[] || []);
+      setPosts((postsData || []) as unknown as CompetitorPost[]);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({

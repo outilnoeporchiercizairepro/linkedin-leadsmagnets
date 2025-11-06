@@ -48,17 +48,17 @@ export default function LeadMagnet() {
     try {
       const tableName = getTableName("Posts En Ligne");
       const { data, error } = await supabase
-        .from(tableName)
+        .from(tableName as any)
         .select('*')
         .not('comments_table_name', 'is', null)
         .order('added_at', { ascending: false });
 
       if (error) throw error;
-      setPosts(data as Post[] || []);
+      setPosts((data || []) as unknown as Post[]);
       
       // Fetch comments for each post
       if (data) {
-        for (const post of data) {
+        for (const post of data as any[]) {
           if (post.comments_table_name) {
             await fetchCommentsCount(post.id, post.comments_table_name);
           }
@@ -112,7 +112,7 @@ export default function LeadMagnet() {
     try {
       const tableName = getTableName("Leads Linkedin");
       const { count, error } = await supabase
-        .from(tableName)
+        .from(tableName as any)
         .select('*', { count: 'exact', head: true });
 
       if (error) throw error;

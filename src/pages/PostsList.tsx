@@ -52,7 +52,7 @@ export default function PostsList() {
       setLoading(true);
       const tableName = getTableName("Posts En Ligne");
       const { data, error } = await supabase
-        .from(tableName)
+        .from(tableName as any)
         .select('*')
         .order('added_at', { ascending: false });
 
@@ -66,7 +66,7 @@ export default function PostsList() {
         return;
       }
 
-      setPosts((data as Post[]) || []);
+      setPosts((data || []) as unknown as Post[]);
     } catch (error) {
       console.error('Erreur:', error);
       toast({
@@ -112,7 +112,7 @@ export default function PostsList() {
       // Mettre à jour le post avec table_exist = true et le nom de la table
       const tableName = getTableName("Posts En Ligne");
       const { error: updateError } = await supabase
-        .from(tableName)
+        .from(tableName as any)
         .update({ 
           table_exist: true,
           comments_table_name: result.table_name,
@@ -155,7 +155,7 @@ export default function PostsList() {
     try {
       const tableName = getTableName("Posts En Ligne");
       const { error } = await supabase
-        .from(tableName)
+        .from(tableName as any)
         .update({ Url_lead_magnet: url } as any)
         .eq('id', postId);
 
