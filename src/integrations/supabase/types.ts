@@ -328,7 +328,7 @@ export type Database = {
         }
         Relationships: []
       }
-      post_comments_10: {
+      post_comments_10_bapt: {
         Row: {
           comment_date: string | null
           connection_request_statut: boolean | null
@@ -364,7 +364,7 @@ export type Database = {
         }
         Relationships: []
       }
-      post_comments_11: {
+      post_comments_11_bapt: {
         Row: {
           comment_date: string | null
           connection_request_statut: boolean | null
@@ -400,7 +400,7 @@ export type Database = {
         }
         Relationships: []
       }
-      post_comments_14: {
+      post_comments_14_bapt: {
         Row: {
           comment_date: string | null
           connection_request_statut: boolean | null
@@ -436,7 +436,7 @@ export type Database = {
         }
         Relationships: []
       }
-      post_comments_15: {
+      post_comments_15_bapt: {
         Row: {
           comment_date: string | null
           connection_request_statut: boolean | null
@@ -472,7 +472,7 @@ export type Database = {
         }
         Relationships: []
       }
-      post_comments_16: {
+      post_comments_16_bapt: {
         Row: {
           comment_date: string | null
           connection_request_statut: boolean | null
@@ -508,7 +508,7 @@ export type Database = {
         }
         Relationships: []
       }
-      post_comments_19: {
+      post_comments_19_bapt: {
         Row: {
           comment_date: string | null
           connection_request_statut: boolean | null
@@ -544,7 +544,7 @@ export type Database = {
         }
         Relationships: []
       }
-      post_comments_20: {
+      post_comments_20_bapt: {
         Row: {
           comment_date: string | null
           connection_request_statut: boolean | null
@@ -580,7 +580,7 @@ export type Database = {
         }
         Relationships: []
       }
-      post_comments_21: {
+      post_comments_21_bapt: {
         Row: {
           comment_date: string | null
           connection_request_statut: boolean | null
@@ -616,7 +616,7 @@ export type Database = {
         }
         Relationships: []
       }
-      post_comments_25: {
+      post_comments_25_bapt: {
         Row: {
           comment_date: string | null
           connection_request_statut: boolean | null
@@ -652,7 +652,7 @@ export type Database = {
         }
         Relationships: []
       }
-      post_comments_26: {
+      post_comments_26_bapt: {
         Row: {
           comment_date: string | null
           connection_request_statut: boolean | null
@@ -688,7 +688,7 @@ export type Database = {
         }
         Relationships: []
       }
-      post_comments_31: {
+      post_comments_31_bapt: {
         Row: {
           comment_date: string | null
           connection_request_statut: boolean | null
@@ -724,7 +724,7 @@ export type Database = {
         }
         Relationships: []
       }
-      post_comments_33: {
+      post_comments_33_bapt: {
         Row: {
           comment_date: string | null
           connection_request_statut: boolean | null
@@ -760,7 +760,7 @@ export type Database = {
         }
         Relationships: []
       }
-      post_comments_7: {
+      post_comments_7_bapt: {
         Row: {
           comment_date: string | null
           connection_request_statut: boolean | null
@@ -796,7 +796,7 @@ export type Database = {
         }
         Relationships: []
       }
-      post_comments_9: {
+      post_comments_9_bapt: {
         Row: {
           comment_date: string | null
           connection_request_statut: boolean | null
