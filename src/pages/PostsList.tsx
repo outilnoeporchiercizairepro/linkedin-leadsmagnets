@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ExternalLink, Database, Loader2, Save, CheckCircle, Filter } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -25,13 +26,20 @@ type Post = {
   leadmagnet?: boolean | null;
   type_post?: string | null;
   comments_table_name?: string | null;
+  B2B_ou_B2C?: string | null;
 }
+
+type FilterOption = 
+  | 'all-without-keyword'
+  | 'b2b-without-keyword'
+  | 'all-with-keyword'
+  | 'b2b-with-keyword';
 
 export default function PostsList() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [leadMagnetUrls, setLeadMagnetUrls] = useState<{[key: number]: string}>({});
-  const [filter, setFilter] = useState<'all' | 'with-keyword' | 'without-keyword'>('all');
+  const [filter, setFilter] = useState<FilterOption>('all-without-keyword');
   const { toast } = useToast();
   const { getTableName } = useUser();
 
@@ -207,9 +215,21 @@ export default function PostsList() {
 
   // Filtrer les posts selon le filtre sélectionné
   const filteredPosts = posts.filter(post => {
-    if (filter === 'with-keyword') return post.keyword !== null;
-    if (filter === 'without-keyword') return post.keyword === null;
-    return true; // 'all'
+    const hasKeyword = post.keyword !== null && post.keyword !== '';
+    const isB2B = post.B2B_ou_B2C === 'B2B';
+    
+    switch (filter) {
+      case 'all-without-keyword':
+        return !hasKeyword;
+      case 'b2b-without-keyword':
+        return isB2B && !hasKeyword;
+      case 'all-with-keyword':
+        return hasKeyword;
+      case 'b2b-with-keyword':
+        return isB2B && hasKeyword;
+      default:
+        return true;
+    }
   });
 
   return (
@@ -232,29 +252,22 @@ export default function PostsList() {
       </div>
 
       {/* Barre de filtres */}
-      <div className="flex gap-2">
-        <Button
-          variant={filter === 'all' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setFilter('all')}
-        >
-          <Filter className="h-4 w-4 mr-2" />
-          Tous
-        </Button>
-        <Button
-          variant={filter === 'with-keyword' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setFilter('with-keyword')}
-        >
-          Avec mot-clé
-        </Button>
-        <Button
-          variant={filter === 'without-keyword' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setFilter('without-keyword')}
-        >
-          Sans mot-clé
-        </Button>
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          <Filter className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm font-medium">Filtrer:</span>
+        </div>
+        <Select value={filter} onValueChange={(value: FilterOption) => setFilter(value)}>
+          <SelectTrigger className="w-[280px] bg-background">
+            <SelectValue placeholder="Sélectionner un filtre" />
+          </SelectTrigger>
+          <SelectContent className="bg-background z-50">
+            <SelectItem value="all-without-keyword">Tout le monde sans mot-clé</SelectItem>
+            <SelectItem value="b2b-without-keyword">B2B sans mot-clé</SelectItem>
+            <SelectItem value="all-with-keyword">Tout le monde avec mot-clé</SelectItem>
+            <SelectItem value="b2b-with-keyword">B2B avec mot-clé</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {posts.length === 0 ? (
