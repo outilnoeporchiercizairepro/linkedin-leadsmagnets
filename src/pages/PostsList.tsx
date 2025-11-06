@@ -29,17 +29,13 @@ type Post = {
   B2B_ou_B2C?: string | null;
 }
 
-type FilterOption = 
-  | 'all-without-keyword'
-  | 'b2b-without-keyword'
-  | 'all-with-keyword'
-  | 'b2b-with-keyword';
+type FilterOption = 'all' | 'b2b';
 
 export default function PostsList() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [leadMagnetUrls, setLeadMagnetUrls] = useState<{[key: number]: string}>({});
-  const [filter, setFilter] = useState<FilterOption>('all-without-keyword');
+  const [filter, setFilter] = useState<FilterOption>('all');
   const { toast } = useToast();
   const { getTableName, userType } = useUser();
 
@@ -216,21 +212,10 @@ export default function PostsList() {
 
   // Filtrer les posts selon le filtre sélectionné
   const filteredPosts = posts.filter(post => {
-    const hasKeyword = post.keyword !== null && post.keyword !== '';
-    const isB2B = post.B2B_ou_B2C === 'B2B';
-    
-    switch (filter) {
-      case 'all-without-keyword':
-        return !hasKeyword;
-      case 'b2b-without-keyword':
-        return isB2B && !hasKeyword;
-      case 'all-with-keyword':
-        return hasKeyword;
-      case 'b2b-with-keyword':
-        return isB2B && hasKeyword;
-      default:
-        return true;
+    if (filter === 'b2b') {
+      return post.B2B_ou_B2C === 'B2B';
     }
+    return true; // 'all'
   });
 
   return (
@@ -259,14 +244,12 @@ export default function PostsList() {
           <span className="text-sm font-medium">Filtrer:</span>
         </div>
         <Select value={filter} onValueChange={(value: FilterOption) => setFilter(value)}>
-          <SelectTrigger className="w-[280px] bg-background">
+          <SelectTrigger className="w-[200px] bg-background">
             <SelectValue placeholder="Sélectionner un filtre" />
           </SelectTrigger>
           <SelectContent className="bg-background z-50">
-            <SelectItem value="all-without-keyword">Tout le monde sans mot-clé</SelectItem>
-            <SelectItem value="b2b-without-keyword">B2B sans mot-clé</SelectItem>
-            <SelectItem value="all-with-keyword">Tout le monde avec mot-clé</SelectItem>
-            <SelectItem value="b2b-with-keyword">B2B avec mot-clé</SelectItem>
+            <SelectItem value="all">Tout le monde</SelectItem>
+            <SelectItem value="b2b">B2B</SelectItem>
           </SelectContent>
         </Select>
       </div>
