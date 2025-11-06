@@ -61,9 +61,8 @@ export default function LeadMagnet() {
       if (data) {
         for (const post of data as any[]) {
           if (post.comments_table_name) {
-            // Ajouter le suffixe utilisateur au nom de la table de commentaires
-            const commentsTableWithSuffix = userType ? `${post.comments_table_name}_${userType}` : post.comments_table_name;
-            await fetchCommentsCount(post.id, commentsTableWithSuffix);
+            // Le nom de table contient déjà le suffixe utilisateur
+            await fetchCommentsCount(post.id, post.comments_table_name);
           }
         }
       }
