@@ -22,7 +22,7 @@ serve(async (req) => {
       )
     }
 
-    const { url } = await req.json()
+    const { url, user_type } = await req.json()
 
     if (!url) {
       return new Response(
@@ -34,7 +34,7 @@ serve(async (req) => {
       )
     }
 
-    console.log('Relaying request to n8n webhook:', { url })
+    console.log('Relaying request to n8n webhook:', { url, user_type })
 
     // Forward the request to the n8n webhook - URL corrigée
     const response = await fetch('https://n8n.srv802543.hstgr.cloud/webhook/ajout-concurrent', {
@@ -42,7 +42,7 @@ serve(async (req) => {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ url }),
+      body: JSON.stringify({ url, user_type }),
     })
 
     console.log('N8N webhook response:', {

@@ -37,7 +37,7 @@ export default function LeadMagnet() {
   const [filter, setFilter] = useState<'all' | 'with-url' | 'without-url'>('all');
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { getTableName } = useUser();
+  const { getTableName, userType } = useUser();
 
   useEffect(() => {
     fetchPosts();
@@ -136,6 +136,11 @@ export default function LeadMagnet() {
     console.log("Lancement du lead magnet pour:", post.urn_post_id);
 
     try {
+      // Déterminer l'account_linkedin_id selon l'utilisateur
+      const accountLinkedinId = userType === "bapt" 
+        ? "JkoJKDJnQ2uE6Ev-JOtzlg" 
+        : "aaaaaaaaa";
+
       const response = await fetch("https://n8n.srv802543.hstgr.cloud/webhook/leadmagnet", {
         method: "POST",
         headers: {
@@ -146,6 +151,8 @@ export default function LeadMagnet() {
           url_lead_magnet: post.Url_lead_magnet,
           comments_table_name: post.comments_table_name,
           keyword: post.keyword,
+          user_type: userType,
+          account_linkedin_id: accountLinkedinId,
         }),
       });
 

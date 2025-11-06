@@ -45,7 +45,7 @@ export default function Competitors() {
   const [postsDialogOpen, setPostsDialogOpen] = useState(false);
   const [dialogCompetitor, setDialogCompetitor] = useState<{id: number, name: string, photo_profil: string} | null>(null);
   const { toast } = useToast();
-  const { getTableName } = useUser();
+  const { getTableName, userType } = useUser();
 
   // Fetch competitors
   useEffect(() => {
@@ -174,11 +174,11 @@ export default function Competitors() {
                   setIsSubmitting(true);
                   try {
                     console.log('Envoi vers edge function:', {
-                      data: { url: linkedinUrl.trim() }
+                      data: { url: linkedinUrl.trim(), user_type: userType }
                     });
 
                     const response = await supabase.functions.invoke('add-competitor', {
-                      body: { url: linkedinUrl.trim() }
+                      body: { url: linkedinUrl.trim(), user_type: userType }
                     });
 
                     const { data, error } = response;
