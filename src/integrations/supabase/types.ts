@@ -968,7 +968,7 @@ export type Database = {
         Returns: Json
       }
       create_post_comments_table: {
-        Args: { post_id_param: number }
+        Args: { post_id_param: number; user_type_param: string }
         Returns: Json
       }
     }

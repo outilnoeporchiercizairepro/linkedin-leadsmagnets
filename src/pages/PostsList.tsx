@@ -41,7 +41,7 @@ export default function PostsList() {
   const [leadMagnetUrls, setLeadMagnetUrls] = useState<{[key: number]: string}>({});
   const [filter, setFilter] = useState<FilterOption>('all-without-keyword');
   const { toast } = useToast();
-  const { getTableName } = useUser();
+  const { getTableName, userType } = useUser();
 
   useEffect(() => {
     fetchPosts();
@@ -89,9 +89,10 @@ export default function PostsList() {
 
   const handleCreateTable = async (postId: number) => {
     try {
-      // Appeler la fonction RPC pour créer la table
+      // Appeler la fonction RPC pour créer la table avec le user_type
       const { data, error: rpcError } = await supabase.rpc('create_post_comments_table', {
-        post_id_param: postId
+        post_id_param: postId,
+        user_type_param: userType
       });
 
       if (rpcError) {
