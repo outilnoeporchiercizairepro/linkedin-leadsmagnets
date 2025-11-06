@@ -9,6 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { ExternalLink, Database, Loader2, Save, CheckCircle, Filter } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useUser } from "@/contexts/UserContext";
 
 type Post = {
   id: number;
@@ -32,6 +33,7 @@ export default function PostsList() {
   const [leadMagnetUrls, setLeadMagnetUrls] = useState<{[key: number]: string}>({});
   const [filter, setFilter] = useState<'all' | 'with-keyword' | 'without-keyword'>('all');
   const { toast } = useToast();
+  const { getTableName } = useUser();
 
   useEffect(() => {
     fetchPosts();
@@ -48,8 +50,9 @@ export default function PostsList() {
   const fetchPosts = async () => {
     try {
       setLoading(true);
+      const tableName = getTableName("Posts En Ligne");
       const { data, error } = await supabase
-        .from('Posts En Ligne')
+        .from(tableName)
         .select('*')
         .order('added_at', { ascending: false });
 
@@ -107,8 +110,9 @@ export default function PostsList() {
       }
 
       // Mettre à jour le post avec table_exist = true et le nom de la table
+      const tableName = getTableName("Posts En Ligne");
       const { error: updateError } = await supabase
-        .from('Posts En Ligne')
+        .from(tableName)
         .update({ 
           table_exist: true,
           comments_table_name: result.table_name,
@@ -149,8 +153,9 @@ export default function PostsList() {
 
   const handleUpdateLeadMagnet = async (postId: number, url: string) => {
     try {
+      const tableName = getTableName("Posts En Ligne");
       const { error } = await supabase
-        .from('Posts En Ligne')
+        .from(tableName)
         .update({ Url_lead_magnet: url } as any)
         .eq('id', postId);
 

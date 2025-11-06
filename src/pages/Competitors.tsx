@@ -14,6 +14,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { CompetitorPostsDialog } from "@/components/CompetitorPostsDialog";
+import { useUser } from "@/contexts/UserContext";
 
 interface Competitor {
   id: number;
@@ -44,6 +45,7 @@ export default function Competitors() {
   const [postsDialogOpen, setPostsDialogOpen] = useState(false);
   const [dialogCompetitor, setDialogCompetitor] = useState<{id: number, name: string, photo_profil: string} | null>(null);
   const { toast } = useToast();
+  const { getTableName } = useUser();
 
   // Fetch competitors
   useEffect(() => {
@@ -52,13 +54,14 @@ export default function Competitors() {
 
   const fetchCompetitors = async () => {
     try {
+      const tableName = getTableName("competitors");
       const { data, error } = await supabase
-        .from('competitors')
+        .from(tableName)
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setCompetitors(data || []);
+      setCompetitors(data as Competitor[] || []);
     } catch (error) {
       console.error('Error fetching competitors:', error);
       toast({
@@ -73,8 +76,9 @@ export default function Competitors() {
 
   const deleteCompetitor = async (id: number) => {
     try {
+      const tableName = getTableName("competitors");
       const { error } = await supabase
-        .from('competitors')
+        .from(tableName)
         .delete()
         .eq('id', id);
 

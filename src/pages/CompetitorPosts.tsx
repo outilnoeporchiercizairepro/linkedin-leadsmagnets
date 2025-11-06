@@ -8,6 +8,7 @@ import { ArrowLeft, ExternalLink, Heart, MessageCircle, Repeat2, Calendar } from
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Tables } from "@/integrations/supabase/types";
+import { useUser } from "@/contexts/UserContext";
 
 type CompetitorPost = Tables<'competitor_posts'>;
 
@@ -25,6 +26,7 @@ export default function CompetitorPosts() {
   const [competitor, setCompetitor] = useState<Competitor | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const { getTableName } = useUser();
 
   useEffect(() => {
     if (competitorId) {
@@ -34,24 +36,45 @@ export default function CompetitorPosts() {
 
   const fetchCompetitorAndPosts = async () => {
     try {
+      const competitorsTable = getTableName("competitors");
+      const postsTable = getTableName("competitor_posts");
+      
       // Fetch competitor info
       const { data: competitorData, error: competitorError } = await supabase
-        .from('competitors')
+        .from(competitorsTable)
         .select('id, name, headline, photo_profil, entreprise')
         .eq('id', parseInt(competitorId!))
-        .single();
+        .maybeSingle();
 
-      if (competitorError) throw competitorError;
-      setCompetitor(competitorData);
+      if (competitorError) {
+        console.error('Error fetching competitor:', competitorError);
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger les informations du concurrent",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setCompetitor(competitorData as Competitor);
 
       // Fetch competitor posts
       const { data: postsData, error: postsError } = await supabase
-        .from('competitor_posts')
+        .from(postsTable)
         .select('*')
         .eq('competitor_id', parseInt(competitorId!))
         .order('post_date', { ascending: false });
 
-      if (postsError) throw postsError;
+      if (postsError) {
+        console.error('Error fetching posts:', postsError);
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger les posts",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       setPosts(postsData as CompetitorPost[] || []);
     } catch (error) {
       console.error('Error fetching data:', error);

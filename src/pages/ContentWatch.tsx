@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useUser } from "@/contexts/UserContext";
 
 interface CompetitorPost {
   id: number;
@@ -53,6 +54,7 @@ export default function ContentWatch() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const { getTableName } = useUser();
 
   // Fetch all competitor posts
   useEffect(() => {
@@ -62,15 +64,17 @@ export default function ContentWatch() {
   const fetchCompetitorPosts = async () => {
     try {
       setIsLoading(true);
+      const tableName = getTableName("competitor_posts");
+      const competitorsTable = getTableName("competitors");
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       sevenDaysAgo.setHours(0, 0, 0, 0);
 
       const { data, error } = await supabase
-        .from('competitor_posts')
+        .from(tableName)
         .select(`
           *,
-          competitors!inner(name, photo_profil, entreprise)
+          ${competitorsTable}!inner(name, photo_profil, entreprise)
         `)
         .order(sortBy, { ascending: sortOrder === 'asc' });
 
@@ -79,8 +83,8 @@ export default function ContentWatch() {
       // Transform data to match our interface
       const transformedData = data?.map(post => ({
         ...post,
-        competitor: Array.isArray(post.competitors) ? post.competitors[0] : post.competitors
-      })) as any[];
+        competitor: Array.isArray(post[competitorsTable]) ? post[competitorsTable][0] : post[competitorsTable]
+      })) as CompetitorPost[];
 
       // Separate posts into recent (7 days) and older
       const recent = transformedData?.filter(post => {

@@ -6,6 +6,7 @@ import { MessageCircle, TrendingUp, Users, ExternalLink, Play, Filter } from "lu
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { useUser } from "@/contexts/UserContext";
 
 type Post = {
   id: number;
@@ -36,6 +37,7 @@ export default function LeadMagnet() {
   const [filter, setFilter] = useState<'all' | 'with-url' | 'without-url'>('all');
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { getTableName } = useUser();
 
   useEffect(() => {
     fetchPosts();
@@ -44,14 +46,15 @@ export default function LeadMagnet() {
 
   const fetchPosts = async () => {
     try {
+      const tableName = getTableName("Posts En Ligne");
       const { data, error } = await supabase
-        .from('Posts En Ligne')
+        .from(tableName)
         .select('*')
         .not('comments_table_name', 'is', null)
         .order('added_at', { ascending: false });
 
       if (error) throw error;
-      setPosts(data || []);
+      setPosts(data as Post[] || []);
       
       // Fetch comments for each post
       if (data) {
@@ -107,8 +110,9 @@ export default function LeadMagnet() {
 
   const fetchTotalLeads = async () => {
     try {
+      const tableName = getTableName("Leads Linkedin");
       const { count, error } = await supabase
-        .from('Leads Linkedin')
+        .from(tableName)
         .select('*', { count: 'exact', head: true });
 
       if (error) throw error;

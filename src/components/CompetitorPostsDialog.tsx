@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Tables } from "@/integrations/supabase/types";
+import { useUser } from "@/contexts/UserContext";
 
 type CompetitorPost = Tables<'competitor_posts'>;
 
@@ -24,6 +25,7 @@ export function CompetitorPostsDialog({ open, onOpenChange, competitor }: Compet
   const [posts, setPosts] = useState<CompetitorPost[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { getTableName } = useUser();
 
   useEffect(() => {
     if (open && competitor.id) {
@@ -34,14 +36,15 @@ export function CompetitorPostsDialog({ open, onOpenChange, competitor }: Compet
   const fetchPosts = async () => {
     setIsLoading(true);
     try {
+      const tableName = getTableName("competitor_posts");
       const { data, error } = await supabase
-        .from('competitor_posts')
+        .from(tableName)
         .select('*')
         .eq('competitor_id', competitor.id)
         .order('post_date', { ascending: false });
 
       if (error) throw error;
-      setPosts(data || []);
+      setPosts(data as CompetitorPost[] || []);
     } catch (error) {
       console.error('Error fetching posts:', error);
       toast({

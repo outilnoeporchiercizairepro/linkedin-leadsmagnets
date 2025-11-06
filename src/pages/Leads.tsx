@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ExternalLink, Search, Users, Building, MessageCircle, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useUser } from "@/contexts/UserContext";
+import { useToast } from "@/hooks/use-toast";
 
 type Lead = {
   id_linkedin: string;
@@ -23,6 +25,8 @@ export default function Leads() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredLeads, setFilteredLeads] = useState<Lead[]>([]);
+  const { getTableName } = useUser();
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchLeads();
@@ -39,13 +43,22 @@ export default function Leads() {
 
   const fetchLeads = async () => {
     try {
+      const tableName = getTableName("Leads Linkedin");
       const { data, error } = await supabase
-        .from('Leads Linkedin')
+        .from(tableName)
         .select('*')
         .order('date', { ascending: false });
 
-      if (error) throw error;
-      setLeads(data || []);
+      if (error) {
+        console.error('Error fetching leads:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger les leads",
+          variant: "destructive",
+        });
+        return;
+      }
+      setLeads(data as Lead[] || []);
     } catch (error) {
       console.error('Error fetching leads:', error);
     } finally {
