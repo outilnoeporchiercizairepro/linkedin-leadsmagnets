@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { DashboardLayout } from "./components/layout/DashboardLayout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { UserProvider } from "./contexts/UserContext";
 import Dashboard from "./pages/Dashboard";
 import LeadMagnet from "./pages/LeadMagnet";
 import PostsList from "./pages/PostsList";
@@ -28,40 +29,42 @@ const queryClient = new QueryClient({
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route
-              path="/competitor-posts/:competitorId"
-              element={
-                <ProtectedRoute>
-                  <CompetitorPosts />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <DashboardLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route path="dashboard" element={<Dashboard />} />
-              <Route path="content-watch" element={<ContentWatch />} />
-              <Route path="competitors" element={<Competitors />} />
-              <Route path="posts" element={<PostsList />} />
-              <Route path="leads" element={<Leads />} />
-              <Route path="lead-magnet" element={<LeadMagnet />} />
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
+      <UserProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route
+                path="/competitor-posts/:competitorId"
+                element={
+                  <ProtectedRoute>
+                    <CompetitorPosts />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route path="dashboard" element={<Dashboard />} />
+                <Route path="content-watch" element={<ContentWatch />} />
+                <Route path="competitors" element={<Competitors />} />
+                <Route path="posts" element={<PostsList />} />
+                <Route path="leads" element={<Leads />} />
+                <Route path="lead-magnet" element={<LeadMagnet />} />
+              </Route>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </UserProvider>
     </QueryClientProvider>
   );
 };
