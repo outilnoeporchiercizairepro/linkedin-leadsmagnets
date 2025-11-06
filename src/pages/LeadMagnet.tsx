@@ -35,7 +35,6 @@ export default function LeadMagnet() {
   const [commentsData, setCommentsData] = useState<Record<number, CommentsCount>>({});
   const [totalLeads, setTotalLeads] = useState(0);
   const [loadingPostId, setLoadingPostId] = useState<number | null>(null);
-  const [filter, setFilter] = useState<'all' | 'with-url' | 'without-url'>('all');
   const [typeFilter, setTypeFilter] = useState<'all' | 'b2b' | 'tout-le-monde'>('all');
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -181,10 +180,6 @@ export default function LeadMagnet() {
   };
 
   const filteredPosts = posts.filter(post => {
-    // Filtre par URL
-    if (filter === 'with-url' && !post.Url_lead_magnet) return false;
-    if (filter === 'without-url' && post.Url_lead_magnet) return false;
-    
     // Filtre par type B2B/Tout le monde
     if (typeFilter === 'b2b' && post.B2B_ou_B2C !== 'B2B') return false;
     if (typeFilter === 'tout-le-monde' && post.B2B_ou_B2C !== 'All') return false;
@@ -307,58 +302,30 @@ export default function LeadMagnet() {
         </CardHeader>
         <CardContent>
           {/* Filter Bar */}
-          <div className="space-y-3 mb-6">
-            <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium text-foreground mr-2">URL:</span>
-              <Button
-                variant={filter === 'all' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setFilter('all')}
-              >
-                Tous ({posts.length})
-              </Button>
-              <Button
-                variant={filter === 'with-url' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setFilter('with-url')}
-              >
-                Avec URL ({posts.filter(p => p.Url_lead_magnet).length})
-              </Button>
-              <Button
-                variant={filter === 'without-url' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setFilter('without-url')}
-              >
-                Sans URL ({posts.filter(p => !p.Url_lead_magnet).length})
-              </Button>
-            </div>
-            
-            <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium text-foreground mr-2">Type:</span>
-              <Button
-                variant={typeFilter === 'all' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setTypeFilter('all')}
-              >
-                Tous ({posts.length})
-              </Button>
-              <Button
-                variant={typeFilter === 'tout-le-monde' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setTypeFilter('tout-le-monde')}
-              >
-                Tout le monde ({posts.filter(p => p.B2B_ou_B2C === 'All').length})
-              </Button>
-              <Button
-                variant={typeFilter === 'b2b' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setTypeFilter('b2b')}
-              >
-                B2B ({posts.filter(p => p.B2B_ou_B2C === 'B2B').length})
-              </Button>
-            </div>
+          <div className="flex items-center gap-2 mb-6 p-3 bg-muted/50 rounded-lg">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-foreground mr-2">Type:</span>
+            <Button
+              variant={typeFilter === 'all' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setTypeFilter('all')}
+            >
+              Tous ({posts.length})
+            </Button>
+            <Button
+              variant={typeFilter === 'tout-le-monde' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setTypeFilter('tout-le-monde')}
+            >
+              Tout le monde ({posts.filter(p => p.B2B_ou_B2C === 'All').length})
+            </Button>
+            <Button
+              variant={typeFilter === 'b2b' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setTypeFilter('b2b')}
+            >
+              B2B ({posts.filter(p => p.B2B_ou_B2C === 'B2B').length})
+            </Button>
           </div>
 
           <div className="space-y-4">
