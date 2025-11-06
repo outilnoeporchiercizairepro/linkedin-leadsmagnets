@@ -212,10 +212,13 @@ export default function PostsList() {
 
   // Filtrer les posts selon le filtre sélectionné
   const filteredPosts = posts.filter(post => {
+    if (filter === 'all') {
+      return post.B2B_ou_B2C === 'All';
+    }
     if (filter === 'b2b') {
       return post.B2B_ou_B2C === 'B2B';
     }
-    return true; // 'all'
+    return true;
   });
 
   return (
