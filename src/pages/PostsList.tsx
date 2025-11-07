@@ -27,6 +27,7 @@ type Post = {
   type_post?: string | null;
   comments_table_name?: string | null;
   B2B_ou_B2C?: string | null;
+  message_prefait?: string | null;
 }
 
 type FilterOption = 'all' | 'b2b';
@@ -35,6 +36,7 @@ export default function PostsList() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [leadMagnetUrls, setLeadMagnetUrls] = useState<{[key: number]: string}>({});
+  const [messagePrefaits, setMessagePrefaits] = useState<{[key: number]: string}>({});
   const [filter, setFilter] = useState<FilterOption>('all');
   const { toast } = useToast();
   const { getTableName, userType } = useUser();
@@ -190,6 +192,51 @@ export default function PostsList() {
       toast({
         title: "Succès",
         description: "URL du lead magnet mise à jour",
+      });
+    } catch (error) {
+      console.error('Erreur:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdateMessage = async (postId: number, message: string) => {
+    try {
+      const tableName = getTableName("Posts En Ligne");
+      const { error } = await supabase
+        .from(tableName as any)
+        .update({ message_prefait: message } as any)
+        .eq('id', postId);
+
+      if (error) {
+        console.error('Erreur lors de la mise à jour:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de mettre à jour le message préfait",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Mettre à jour l'état local
+      setPosts(posts.map(post => 
+        post.id === postId 
+          ? { ...post, message_prefait: message }
+          : post
+      ));
+
+      // Vider le champ input
+      setMessagePrefaits(prev => ({
+        ...prev,
+        [postId]: ''
+      }));
+
+      toast({
+        title: "Succès",
+        description: "Message préfait mis à jour",
       });
     } catch (error) {
       console.error('Erreur:', error);
@@ -428,7 +475,7 @@ export default function PostsList() {
                               </div>
                             )}
 
-                            {post.comments_table_name && (
+                            {post.comments_table_name && post.B2B_ou_B2C !== 'B2B' && (
                               <div>
                                 <h4 className="font-medium text-sm text-muted-foreground mb-1">Lead Magnet URL:</h4>
                                 {!post.Url_lead_magnet ? (
@@ -465,6 +512,67 @@ export default function PostsList() {
                                     </a>
                                   </div>
                                 )}
+                              </div>
+                            )}
+
+                            {post.comments_table_name && (
+                              <div>
+                                <h4 className="font-medium text-sm text-muted-foreground mb-1">Message préfait:</h4>
+                                <div className="space-y-2">
+                                  <div className="text-xs text-muted-foreground bg-muted/30 p-2 rounded space-y-1">
+                                    <p>Variables disponibles:</p>
+                                    <p>• Prénom: {`{{ $json.person_name.split(' ')[0] }}`}</p>
+                                    <p>• URL lead magnet: {`{{ $('Webhook4').first().json.body.url_lead_magnet}}`}</p>
+                                  </div>
+                                  {!post.message_prefait ? (
+                                    <div className="flex flex-col gap-2">
+                                      <textarea
+                                        placeholder="Entrez votre message préfait avec les variables..."
+                                        value={messagePrefaits[post.id] || ''}
+                                        onChange={(e) => setMessagePrefaits(prev => ({
+                                          ...prev,
+                                          [post.id]: e.target.value
+                                        }))}
+                                        className="w-full min-h-[120px] p-3 text-sm border border-border rounded-md bg-background text-foreground resize-y"
+                                      />
+                                      <Button
+                                        size="sm"
+                                        onClick={() => handleUpdateMessage(post.id, messagePrefaits[post.id] || '')}
+                                        disabled={!messagePrefaits[post.id]?.trim()}
+                                      >
+                                        <Save className="h-4 w-4 mr-1" />
+                                        Sauvegarder le message
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    <div className="flex flex-col gap-2">
+                                      <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded border border-green-200 dark:border-green-800">
+                                        <div className="flex items-start gap-2 mb-2">
+                                          <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
+                                          <span className="text-green-700 dark:text-green-300 font-medium text-xs">Message configuré</span>
+                                        </div>
+                                        <p className="text-sm text-foreground whitespace-pre-wrap">{post.message_prefait}</p>
+                                      </div>
+                                      <textarea
+                                        placeholder="Modifier le message préfait..."
+                                        value={messagePrefaits[post.id] || ''}
+                                        onChange={(e) => setMessagePrefaits(prev => ({
+                                          ...prev,
+                                          [post.id]: e.target.value
+                                        }))}
+                                        className="w-full min-h-[120px] p-3 text-sm border border-border rounded-md bg-background text-foreground resize-y"
+                                      />
+                                      <Button
+                                        size="sm"
+                                        onClick={() => handleUpdateMessage(post.id, messagePrefaits[post.id] || '')}
+                                        disabled={!messagePrefaits[post.id]?.trim()}
+                                      >
+                                        <Save className="h-4 w-4 mr-1" />
+                                        Modifier le message
+                                      </Button>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             )}
                           </div>
