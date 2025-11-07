@@ -186,15 +186,6 @@ export default function LeadMagnet() {
     if (typeFilter === 'b2b' && post.B2B_ou_B2C !== 'B2B') return false;
     if (typeFilter === 'tout-le-monde' && post.B2B_ou_B2C !== 'All') return false;
     
-    // Règles d'affichage :
-    // - B2B : doit avoir message_prefait
-    // - Tout le monde : doit avoir Url_lead_magnet ET message_prefait
-    if (post.B2B_ou_B2C === 'B2B') {
-      if (!post.message_prefait) return false;
-    } else if (post.B2B_ou_B2C === 'All') {
-      if (!post.Url_lead_magnet || !post.message_prefait) return false;
-    }
-    
     return true;
   });
 
