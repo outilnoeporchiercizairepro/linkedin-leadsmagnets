@@ -19,6 +19,7 @@ type Post = {
   Url_lead_magnet: string | null;
   keyword: string | null;
   B2B_ou_B2C: string | null;
+  message_prefait: string | null;
 };
 
 type CommentsCount = {
@@ -36,6 +37,8 @@ export default function LeadMagnet() {
   const [totalLeads, setTotalLeads] = useState(0);
   const [loadingPostId, setLoadingPostId] = useState<number | null>(null);
   const [typeFilter, setTypeFilter] = useState<'all' | 'b2b' | 'tout-le-monde'>('all');
+  const [editingMessageId, setEditingMessageId] = useState<number | null>(null);
+  const [editingMessage, setEditingMessage] = useState<string>("");
   const navigate = useNavigate();
   const { toast } = useToast();
   const { getTableName, userType } = useUser();
@@ -124,6 +127,34 @@ export default function LeadMagnet() {
     }
   };
 
+  const handleSaveMessage = async (postId: number) => {
+    try {
+      const tableName = getTableName("Posts En Ligne");
+      const { error } = await supabase
+        .from(tableName as any)
+        .update({ message_prefait: editingMessage })
+        .eq('id', postId);
+
+      if (error) throw error;
+
+      setPosts(posts.map(p => p.id === postId ? { ...p, message_prefait: editingMessage } : p));
+      setEditingMessageId(null);
+      setEditingMessage("");
+      
+      toast({
+        title: "Message sauvegardé",
+        description: "Le message préfait a été mis à jour",
+      });
+    } catch (error) {
+      console.error('Error saving message:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de sauvegarder le message",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleLaunchLeadMagnet = async (post: Post) => {
     if (!post.urn_post_id) {
       toast({
@@ -156,6 +187,7 @@ export default function LeadMagnet() {
           type_post: post.B2B_ou_B2C,
           account_linkedin_id: accountLinkedinId,
           leads_table_name: getTableName("Leads Linkedin"),
+          message_prefait: post.message_prefait,
         }),
       });
 
@@ -183,6 +215,15 @@ export default function LeadMagnet() {
     // Filtre par type B2B/Tout le monde
     if (typeFilter === 'b2b' && post.B2B_ou_B2C !== 'B2B') return false;
     if (typeFilter === 'tout-le-monde' && post.B2B_ou_B2C !== 'All') return false;
+    
+    // Règles d'affichage :
+    // - B2B : doit avoir message_prefait
+    // - Tout le monde : doit avoir Url_lead_magnet ET message_prefait
+    if (post.B2B_ou_B2C === 'B2B') {
+      if (!post.message_prefait) return false;
+    } else if (post.B2B_ou_B2C === 'All') {
+      if (!post.Url_lead_magnet || !post.message_prefait) return false;
+    }
     
     return true;
   });
@@ -347,55 +388,125 @@ export default function LeadMagnet() {
                 return (
                   <div
                     key={post.id}
-                    className="flex items-center justify-between p-4 border border-border rounded-lg hover:shadow-md transition-all duration-200"
+                    className="p-4 border border-border rounded-lg hover:shadow-md transition-all duration-200 space-y-4"
                   >
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-foreground truncate pr-4">
-                        Post {post.id} : {post.Caption ? post.Caption.split(' ').slice(0, 3).join(' ') : 'Sans titre'}
-                      </h3>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="secondary" className="text-xs">
-                          {new Date(post.added_at).toLocaleDateString()}
-                        </Badge>
-                        {post.post_url && (
-                          <a
-                            href={post.post_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs text-primary hover:underline flex items-center gap-1"
-                          >
-                            Voir le post
-                            <ExternalLink className="h-3 w-3" />
-                          </a>
-                        )}
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-medium text-foreground truncate pr-4">
+                            Post {post.id} : {post.Caption ? post.Caption.split(' ').slice(0, 3).join(' ') : 'Sans titre'}
+                          </h3>
+                          <Badge variant={post.B2B_ou_B2C === 'B2B' ? 'default' : 'secondary'} className="text-xs">
+                            {post.B2B_ou_B2C === 'B2B' ? 'B2B' : 'Tout le monde'}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="secondary" className="text-xs">
+                            {new Date(post.added_at).toLocaleDateString()}
+                          </Badge>
+                          {post.post_url && (
+                            <a
+                              href={post.post_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-primary hover:underline flex items-center gap-1"
+                            >
+                              Voir le post
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-4">
+                        <div className="text-center">
+                          <p className="text-sm text-muted-foreground">Total</p>
+                          <p className="text-lg font-semibold text-foreground">{comments.total}</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-sm text-muted-foreground">DM envoyés</p>
+                          <p className="text-lg font-semibold text-green-600">{comments.received_dm}</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-sm text-muted-foreground">Connexions</p>
+                          <p className="text-lg font-semibold text-blue-600">{comments.connection_request}</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-sm text-muted-foreground">Sans DM</p>
+                          <p className="text-lg font-semibold text-orange-600">{comments.not_received_dm}</p>
+                        </div>
+                        <Button
+                          onClick={() => handleLaunchLeadMagnet(post)}
+                          disabled={loadingPostId === post.id}
+                          className="ml-4"
+                        >
+                          <Play className="h-4 w-4 mr-2" />
+                          {loadingPostId === post.id ? "Envoi..." : "Lancer"}
+                        </Button>
                       </div>
                     </div>
-                    
-                    <div className="flex items-center gap-4">
-                      <div className="text-center">
-                        <p className="text-sm text-muted-foreground">Total</p>
-                        <p className="text-lg font-semibold text-foreground">{comments.total}</p>
+
+                    {/* Message préfait section */}
+                    <div className="pt-3 border-t border-border">
+                      <div className="flex items-start gap-2">
+                        <div className="flex-1">
+                          {editingMessageId === post.id ? (
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium text-foreground">
+                                Message préfait (utilisez les variables)
+                              </label>
+                              <textarea
+                                value={editingMessage}
+                                onChange={(e) => setEditingMessage(e.target.value)}
+                                className="w-full min-h-[100px] p-3 text-sm border border-border rounded-md bg-background text-foreground"
+                                placeholder="Exemple: Bonjour {{ $json.person_name.split(' ')[0] }}, voici le lien: {{ $('Webhook4').first().json.body.url_lead_magnet}}"
+                              />
+                              <div className="text-xs text-muted-foreground space-y-1">
+                                <p>• Prénom: {`{{ $json.person_name.split(' ')[0] }}`}</p>
+                                <p>• URL lead magnet: {`{{ $('Webhook4').first().json.body.url_lead_magnet}}`}</p>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button size="sm" onClick={() => handleSaveMessage(post.id)}>
+                                  Sauvegarder
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  onClick={() => {
+                                    setEditingMessageId(null);
+                                    setEditingMessage("");
+                                  }}
+                                >
+                                  Annuler
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1">
+                                <p className="text-sm font-medium text-foreground mb-1">Message préfait:</p>
+                                {post.message_prefait ? (
+                                  <p className="text-sm text-muted-foreground bg-muted/50 p-2 rounded">
+                                    {post.message_prefait}
+                                  </p>
+                                ) : (
+                                  <p className="text-sm text-muted-foreground italic">Aucun message configuré</p>
+                                )}
+                              </div>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => {
+                                  setEditingMessageId(post.id);
+                                  setEditingMessage(post.message_prefait || "");
+                                }}
+                              >
+                                Éditer
+                              </Button>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div className="text-center">
-                        <p className="text-sm text-muted-foreground">DM envoyés</p>
-                        <p className="text-lg font-semibold text-green-600">{comments.received_dm}</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-sm text-muted-foreground">Connexions</p>
-                        <p className="text-lg font-semibold text-blue-600">{comments.connection_request}</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-sm text-muted-foreground">Sans DM</p>
-                        <p className="text-lg font-semibold text-orange-600">{comments.not_received_dm}</p>
-                      </div>
-                      <Button
-                        onClick={() => handleLaunchLeadMagnet(post)}
-                        disabled={loadingPostId === post.id}
-                        className="ml-4"
-                      >
-                        <Play className="h-4 w-4 mr-2" />
-                        {loadingPostId === post.id ? "Envoi..." : "Lancer"}
-                      </Button>
                     </div>
                   </div>
                 );
