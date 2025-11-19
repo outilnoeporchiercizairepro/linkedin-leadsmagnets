@@ -14,8 +14,10 @@ import { useUser } from "@/contexts/UserContext";
 
 type Post = {
   id: number;
-  Post_id: number | null;
-  Caption: string | null;
+  Post_id?: number | null;
+  post_id?: number | null;
+  Caption?: string | null;
+  caption?: string | null;
   added_at: string;
   table_exist?: boolean | null;
   keyword?: string | null;
@@ -23,12 +25,34 @@ type Post = {
   media?: string | null;
   urn_post_id?: string | null;
   Url_lead_magnet?: string | null;
+  url_lead_magnet?: string | null;
   leadmagnet?: boolean | null;
   type_post?: string | null;
   comments_table_name?: string | null;
   B2B_ou_B2C?: string | null;
   message_prefait?: string | null;
 }
+
+// Helper functions pour gérer les différences de noms de colonnes
+const getCaption = (post: Post) => post.Caption || post.caption;
+const getUrlLeadMagnet = (post: Post) => post.Url_lead_magnet || post.url_lead_magnet;
+const getPostId = (post: Post) => post.Post_id || post.post_id;
+
+// Fonction pour obtenir les noms de colonnes corrects selon le user type
+const getColumnNames = (userType: string | null) => {
+  if (userType === 'imrane') {
+    return {
+      caption: 'caption',
+      url_lead_magnet: 'url_lead_magnet',
+      post_id: 'post_id'
+    };
+  }
+  return {
+    caption: 'Caption',
+    url_lead_magnet: 'Url_lead_magnet',
+    post_id: 'Post_id'
+  };
+};
 
 type FilterOption = 'all' | 'b2b';
 
@@ -161,9 +185,15 @@ export default function PostsList() {
   const handleUpdateLeadMagnet = async (postId: number, url: string) => {
     try {
       const tableName = getTableName("Posts En Ligne");
+      const columnNames = getColumnNames(userType);
+      
+      const updateData = {
+        [columnNames.url_lead_magnet]: url
+      };
+      
       const { error } = await supabase
         .from(tableName as any)
-        .update({ Url_lead_magnet: url } as any)
+        .update(updateData as any)
         .eq('id', postId);
 
       if (error) {
@@ -177,11 +207,16 @@ export default function PostsList() {
       }
 
       // Mettre à jour l'état local
-      setPosts(posts.map(post => 
-        post.id === postId 
-          ? { ...post, Url_lead_magnet: url }
-          : post
-      ));
+      setPosts(posts.map(post => {
+        if (post.id === postId) {
+          if (userType === 'imrane') {
+            return { ...post, url_lead_magnet: url };
+          } else {
+            return { ...post, Url_lead_magnet: url };
+          }
+        }
+        return post;
+      }));
 
       // Vider le champ input
       setLeadMagnetUrls(prev => ({
@@ -347,7 +382,7 @@ export default function PostsList() {
                   </TableCell>
                   <TableCell className="font-medium">
                     {(() => {
-                      const description = post.Caption || '';
+                      const description = getCaption(post) || '';
                       const firstSixWords = description.split(' ').slice(0, 6).join(' ');
                       return firstSixWords || `Post ${post.id}`;
                     })()}
@@ -362,7 +397,7 @@ export default function PostsList() {
                     )}
                   </TableCell>
                   <TableCell>
-                    {post.Url_lead_magnet && post.keyword && post.comments_table_name ? (
+                    {getUrlLeadMagnet(post) && post.keyword && post.comments_table_name ? (
                       <Badge variant="default" className="text-xs">
                         <CheckCircle className="h-3 w-3 mr-1" />
                         Configuré
@@ -403,10 +438,10 @@ export default function PostsList() {
                               </p>
                             </div>
 
-                            {post.Caption && (
+                            {getCaption(post) && (
                               <div>
                                 <h4 className="font-medium text-sm text-muted-foreground mb-1">Caption:</h4>
-                                <p className="text-sm leading-relaxed bg-muted/50 p-3 rounded-md whitespace-pre-wrap">{post.Caption}</p>
+                                <p className="text-sm leading-relaxed bg-muted/50 p-3 rounded-md whitespace-pre-wrap">{getCaption(post)}</p>
                               </div>
                             )}
 
@@ -478,7 +513,7 @@ export default function PostsList() {
                             {post.comments_table_name && post.B2B_ou_B2C !== 'B2B' && (
                               <div>
                                 <h4 className="font-medium text-sm text-muted-foreground mb-1">Lead Magnet URL:</h4>
-                                {!post.Url_lead_magnet ? (
+                                {!getUrlLeadMagnet(post) ? (
                                   <div className="flex gap-2">
                                     <Input
                                       placeholder="Coller l'URL du lead magnet..."
@@ -503,7 +538,7 @@ export default function PostsList() {
                                     <CheckCircle className="h-4 w-4 text-green-600" />
                                     <span className="text-green-700 dark:text-green-300 font-medium">Lead magnet configuré</span>
                                     <a 
-                                      href={post.Url_lead_magnet} 
+                                      href={getUrlLeadMagnet(post)} 
                                       target="_blank" 
                                       rel="noopener noreferrer" 
                                       className="text-primary hover:underline break-all ml-auto"
