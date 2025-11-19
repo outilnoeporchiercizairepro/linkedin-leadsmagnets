@@ -28,10 +28,10 @@ serve(async (req) => {
       });
     }
 
-    // Map user_type to account_id
+    // Map user_type to account_linkedin_id
     const accountIdMap: Record<string, string> = {
       imrane: "mVOn0dFjTWeGjMB0IBIPTg",
-      bapt: "JkoJKDJnQ2uE6Ev-JOtzlg", // À compléter si nécessaire
+      bapt: "JkoJKDJnQ2uE6Ev-JOtzlg",
     };
 
     const account_id = accountIdMap[user_type] || "";
