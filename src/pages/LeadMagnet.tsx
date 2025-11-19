@@ -15,7 +15,7 @@ type Post = {
   comments_table_name: string | null;
   table_exist: boolean | null;
   urn_post_id: string | null;
-  url_lead_magnet: string | null;
+  Url_lead_magnet: string | null;
   keyword: string | null;
   B2B_ou_B2C: string | null;
   message_prefait: string | null;
@@ -145,7 +145,7 @@ export default function LeadMagnet() {
         },
         body: JSON.stringify({
           urn_post_id: post.urn_post_id,
-          url_lead_magnet: post.url_lead_magnet,
+          url_lead_magnet: post.Url_lead_magnet,
           comments_table_name: post.comments_table_name,
           keyword: post.keyword,
           type_post: post.B2B_ou_B2C,
