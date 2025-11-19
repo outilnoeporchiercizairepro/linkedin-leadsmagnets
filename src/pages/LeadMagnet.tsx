@@ -137,7 +137,7 @@ export default function LeadMagnet() {
     console.log("Lancement du lead magnet pour:", post.urn_post_id);
     try {
       // Déterminer l'account_linkedin_id selon l'utilisateur
-      const accountLinkedinId = userType === "bapt" ? "JkoJKDJnQ2uE6Ev-JOtzlg" : "aaaaaaaaa";
+      const accountLinkedinId = userType === "bapt" ? "JkoJKDJnQ2uE6Ev-JOtzlg" : "mVOn0dFjTWeGjMB0IBIPTg";
       const response = await fetch("https://n8n.srv802543.hstgr.cloud/webhook/leadmagnet", {
         method: "POST",
         headers: {
