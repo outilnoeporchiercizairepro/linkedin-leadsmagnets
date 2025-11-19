@@ -34,7 +34,15 @@ serve(async (req) => {
       )
     }
 
-    console.log('Relaying request to n8n webhook:', { url, user_type })
+    // Map user_type to account_id
+    const accountIdMap: Record<string, string> = {
+      'imrane': 'mVOn0dFjTWeGjMB0IBIPTg',
+      'bapt': '' // À compléter si nécessaire
+    }
+    
+    const account_id = accountIdMap[user_type] || ''
+
+    console.log('Relaying request to n8n webhook:', { url, user_type, account_id })
 
     // Forward the request to the n8n webhook - URL corrigée
     const response = await fetch('https://n8n.srv802543.hstgr.cloud/webhook/ajout-concurrent', {
@@ -42,7 +50,7 @@ serve(async (req) => {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ url, user_type }),
+      body: JSON.stringify({ url, user_type, account_id }),
     })
 
     console.log('N8N webhook response:', {
