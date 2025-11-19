@@ -138,6 +138,9 @@ export default function LeadMagnet() {
     try {
       // Déterminer l'account_linkedin_id selon l'utilisateur
       const accountLinkedinId = userType === "bapt" ? "JkoJKDJnQ2uE6Ev-JOtzlg" : "mVOn0dFjTWeGjMB0IBIPTg";
+      // Normaliser l'URL du lead magnet selon le schéma (Url_lead_magnet pour bapt, url_lead_magnet pour imrane)
+      const urlLeadMagnet = (post as any).Url_lead_magnet ?? (post as any).url_lead_magnet ?? null;
+
       const response = await fetch("https://n8n.srv802543.hstgr.cloud/webhook/leadmagnet", {
         method: "POST",
         headers: {
@@ -145,7 +148,7 @@ export default function LeadMagnet() {
         },
         body: JSON.stringify({
           urn_post_id: post.urn_post_id,
-          url_lead_magnet: post.Url_lead_magnet,
+          url_lead_magnet: urlLeadMagnet,
           comments_table_name: post.comments_table_name,
           keyword: post.keyword,
           type_post: post.B2B_ou_B2C,
