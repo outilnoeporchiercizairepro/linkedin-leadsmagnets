@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { ExternalLink, Search, Users, Building, MessageCircle, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUser } from "@/contexts/UserContext";
@@ -178,14 +179,14 @@ export default function Leads() {
       {/* Search and Table */}
       <Card className="shadow-card">
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <CardTitle>Tous les leads</CardTitle>
               <CardDescription>
                 Liste complète de vos leads LinkedIn avec leurs informations
               </CardDescription>
             </div>
-            <div className="relative w-64">
+            <div className="relative w-full md:w-64">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Rechercher par nom, poste, entreprise..."
@@ -197,23 +198,23 @@ export default function Leads() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nom</TableHead>
-                  <TableHead>Poste</TableHead>
-                  <TableHead>Entreprise</TableHead>
-                  <TableHead>Statut connexion</TableHead>
-                  <TableHead>Statut DM</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
+          <ScrollArea className="w-full rounded-md border">
+            <div className="min-w-[800px]">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nom</TableHead>
+                    <TableHead>Poste</TableHead>
+                    <TableHead>Entreprise</TableHead>
+                    <TableHead>Statut connexion</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
               <TableBody>
                 {filteredLeads.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+                    <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
                       <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
                       {searchTerm ? 'Aucun lead trouvé pour cette recherche' : 'Aucun lead disponible'}
                     </TableCell>
@@ -236,9 +237,6 @@ export default function Leads() {
                       </TableCell>
                       <TableCell>
                         {getStatusBadge(lead.connection_status, 'connection')}
-                      </TableCell>
-                      <TableCell>
-                        {getStatusBadge(lead.dm_status, 'dm')}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
@@ -268,7 +266,8 @@ export default function Leads() {
                 )}
               </TableBody>
             </Table>
-          </div>
+            </div>
+          </ScrollArea>
           {filteredLeads.length > 0 && (
             <div className="mt-4 text-sm text-muted-foreground">
               {filteredLeads.length} lead{filteredLeads.length > 1 ? 's' : ''} affiché{filteredLeads.length > 1 ? 's' : ''} sur {leads.length} au total
