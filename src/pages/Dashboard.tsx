@@ -2,10 +2,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { TrendingUp, Users, Target } from "lucide-react";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useRecentActivity } from "@/hooks/useRecentActivity";
+import { useActivityChart } from "@/hooks/useActivityChart";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 export default function Dashboard() {
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
   const { data: recentActivity, isLoading: activityLoading } = useRecentActivity();
+  const { data: chartData, isLoading: chartLoading } = useActivityChart();
 
   const statsCards = [
     {
@@ -59,6 +62,75 @@ export default function Dashboard() {
           </Card>
         ))}
       </div>
+
+      {/* Activity Chart */}
+      <Card className="shadow-card">
+        <CardHeader>
+          <CardTitle>Évolution de l'activité</CardTitle>
+          <CardDescription>Commentaires, leads et DMs envoyés sur les 30 derniers jours</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {chartLoading ? (
+            <div className="h-[300px] flex items-center justify-center">
+              <div className="animate-pulse text-muted-foreground">Chargement des données...</div>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                <XAxis 
+                  dataKey="date" 
+                  className="text-xs"
+                  tick={{ fill: "hsl(var(--muted-foreground))" }}
+                />
+                <YAxis 
+                  className="text-xs"
+                  tick={{ fill: "hsl(var(--muted-foreground))" }}
+                />
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "8px",
+                  }}
+                  labelStyle={{ color: "hsl(var(--foreground))" }}
+                />
+                <Legend 
+                  wrapperStyle={{ paddingTop: "20px" }}
+                  iconType="line"
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="comments" 
+                  name="Commentaires"
+                  stroke="hsl(var(--primary))" 
+                  strokeWidth={2}
+                  dot={{ fill: "hsl(var(--primary))", r: 3 }}
+                  activeDot={{ r: 5 }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="dms" 
+                  name="DMs envoyés"
+                  stroke="hsl(142 76% 36%)" 
+                  strokeWidth={2}
+                  dot={{ fill: "hsl(142 76% 36%)", r: 3 }}
+                  activeDot={{ r: 5 }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="leads" 
+                  name="Leads"
+                  stroke="hsl(221 83% 53%)" 
+                  strokeWidth={2}
+                  dot={{ fill: "hsl(221 83% 53%)", r: 3 }}
+                  activeDot={{ r: 5 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Recent Activity */}
       <Card className="shadow-card">
