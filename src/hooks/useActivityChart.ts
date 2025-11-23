@@ -10,23 +10,23 @@ export interface ChartDataPoint {
   dms: number;
 }
 
-export const useActivityChart = () => {
+export const useActivityChart = (days: number = 30) => {
   const { getTableName } = useUser();
 
   return useQuery({
-    queryKey: ["activity-chart"],
+    queryKey: ["activity-chart", days],
     queryFn: async () => {
       const leadsTableName = getTableName("Leads Linkedin");
       const postsTableName = getTableName("Posts En Ligne");
 
-      // Récupérer les données des 30 derniers jours
-      const thirtyDaysAgo = startOfDay(subDays(new Date(), 30));
+      // Récupérer les données des X derniers jours
+      const startDate = startOfDay(subDays(new Date(), days));
 
       // Récupérer tous les leads avec leur date
       const { data: leads, error: leadsError } = await supabase
         .from(leadsTableName as any)
         .select("date")
-        .gte("date", thirtyDaysAgo.toISOString());
+        .gte("date", startDate.toISOString());
 
       if (leadsError) throw leadsError;
 
@@ -41,11 +41,12 @@ export const useActivityChart = () => {
       // Créer un objet pour agréger les données par date
       const dataMap = new Map<string, ChartDataPoint>();
 
-      // Initialiser tous les jours des 30 derniers jours
-      for (let i = 0; i < 30; i++) {
+      // Initialiser tous les jours de la période
+      for (let i = 0; i < days; i++) {
         const date = format(subDays(new Date(), i), "yyyy-MM-dd");
+        const displayFormat = days === 1 ? "HH:mm" : days <= 7 ? "dd/MM" : days <= 30 ? "dd/MM" : "dd/MM/yy";
         dataMap.set(date, {
-          date: format(subDays(new Date(), i), "dd/MM"),
+          date: format(subDays(new Date(), i), displayFormat),
           leads: 0,
           comments: 0,
           dms: 0,
@@ -56,7 +57,6 @@ export const useActivityChart = () => {
       leads?.forEach((lead: any) => {
         if (lead.date) {
           const dateKey = format(new Date(lead.date), "yyyy-MM-dd");
-          const displayDate = format(new Date(lead.date), "dd/MM");
           if (dataMap.has(dateKey)) {
             const existing = dataMap.get(dateKey)!;
             dataMap.set(dateKey, { ...existing, leads: existing.leads + 1 });
@@ -73,7 +73,7 @@ export const useActivityChart = () => {
               const { data: comments } = await supabase
                 .from(post.comments_table_name)
                 .select("created_at, received_dm")
-                .gte("created_at", thirtyDaysAgo.toISOString());
+                .gte("created_at", startDate.toISOString());
 
               comments?.forEach((comment: any) => {
                 const dateKey = format(new Date(comment.created_at), "yyyy-MM-dd");

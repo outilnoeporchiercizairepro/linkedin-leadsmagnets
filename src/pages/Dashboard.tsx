@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { TrendingUp, Users, Target } from "lucide-react";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useRecentActivity } from "@/hooks/useRecentActivity";
@@ -6,9 +8,18 @@ import { useActivityChart } from "@/hooks/useActivityChart";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 export default function Dashboard() {
+  const [periodDays, setPeriodDays] = useState(30);
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
   const { data: recentActivity, isLoading: activityLoading } = useRecentActivity();
-  const { data: chartData, isLoading: chartLoading } = useActivityChart();
+  const { data: chartData, isLoading: chartLoading } = useActivityChart(periodDays);
+
+  const periods = [
+    { label: "1J", days: 1 },
+    { label: "7J", days: 7 },
+    { label: "30J", days: 30 },
+    { label: "90J", days: 90 },
+    { label: "1An", days: 365 },
+  ];
 
   const statsCards = [
     {
@@ -66,8 +77,25 @@ export default function Dashboard() {
       {/* Activity Chart */}
       <Card className="shadow-card">
         <CardHeader>
-          <CardTitle>Évolution de l'activité</CardTitle>
-          <CardDescription>Commentaires, leads et DMs envoyés sur les 30 derniers jours</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Évolution de l'activité</CardTitle>
+              <CardDescription>Commentaires, leads et DMs envoyés</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              {periods.map((period) => (
+                <Button
+                  key={period.days}
+                  variant={periodDays === period.days ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setPeriodDays(period.days)}
+                  className="min-w-[60px]"
+                >
+                  {period.label}
+                </Button>
+              ))}
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {chartLoading ? (
