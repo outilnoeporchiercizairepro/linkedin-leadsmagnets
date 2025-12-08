@@ -306,8 +306,8 @@ export default function LeadMagnet() {
                     <div className="flex items-center justify-between">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <h3 className="font-medium text-foreground truncate pr-4">
-                            Post {post.id} : {post.Caption ? post.Caption.split(' ').slice(0, 3).join(' ') : 'Sans titre'}
+                        <h3 className="font-medium text-foreground truncate pr-4">
+                            Post {post.id} : {((post as any).Caption || (post as any).caption) ? ((post as any).Caption || (post as any).caption).split(' ').slice(0, 3).join(' ') + '...' : 'Sans titre'}
                           </h3>
                           <Badge variant={post.B2B_ou_B2C === 'B2B' ? 'default' : 'secondary'} className="text-xs">
                             {post.B2B_ou_B2C === 'B2B' ? 'B2B' : 'Tout le monde'}
