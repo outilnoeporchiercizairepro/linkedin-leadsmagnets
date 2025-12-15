@@ -3,17 +3,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { useUser } from "@/contexts/UserContext";
 
 export const useRecentActivity = () => {
-  const { getTableName } = useUser();
+  const { user } = useUser();
   
   return useQuery({
-    queryKey: ["recent-activity"],
+    queryKey: ["recent-activity", user?.id],
     queryFn: async () => {
+      if (!user) return [];
+
       const activities = [];
 
       // Get recent published posts
       const { data: recentPosts } = await supabase
-        .from(getTableName("Posts En Ligne") as any)
-        .select("added_at, Caption")
+        .from('posts')
+        .select("added_at, caption")
+        .eq('account_id', user.id)
         .order("added_at", { ascending: false })
         .limit(2);
 
@@ -29,8 +32,9 @@ export const useRecentActivity = () => {
 
       // Get recent leads
       const { data: recentLeads } = await supabase
-        .from(getTableName("Leads Linkedin") as any)
+        .from('leads')
         .select("date")
+        .eq('user_id', user.id)
         .order("date", { ascending: false })
         .limit(2);
 
@@ -44,19 +48,21 @@ export const useRecentActivity = () => {
         });
       }
 
-      // Get recent competitors
-      const { data: recentCompetitors } = await supabase
-        .from(getTableName("competitors") as any)
-        .select("created_at, name")
-        .order("created_at", { ascending: false })
-        .limit(1);
+      // Get recent comments
+      const { data: recentComments } = await supabase
+        .from('comments')
+        .select("comment_date, person_name")
+        .eq('account_id', user.id)
+        .order("comment_date", { ascending: false })
+        .limit(2);
 
-      if (recentCompetitors) {
-        (recentCompetitors as any[]).forEach((competitor) => {
+      if (recentComments) {
+        (recentComments as any[]).forEach((comment) => {
+          const personName = comment.person_name || "Quelqu'un";
           activities.push({
-            action: `Concurrent ajouté: ${competitor.name}`,
-            time: formatTimeAgo(competitor.created_at),
-            type: "competitor",
+            action: `Nouveau commentaire de ${personName}`,
+            time: formatTimeAgo(comment.comment_date),
+            type: "comment",
           });
         });
       }

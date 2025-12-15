@@ -3,66 +3,102 @@ import { supabase } from "@/integrations/supabase/client";
 import { useUser } from "@/contexts/UserContext";
 
 export const useDashboardStats = () => {
-  const { getTableName } = useUser();
+  const { user } = useUser();
   
   return useQuery({
-    queryKey: ["dashboard-stats"],
+    queryKey: ["dashboard-stats", user?.id],
     queryFn: async () => {
+      if (!user) {
+        return {
+          publishedPosts: 0,
+          totalLeads: 0,
+          totalComments: 0,
+          postsThisMonth: 0,
+          leadsThisMonth: 0,
+          commentsThisMonth: 0,
+        };
+      }
+
       // Get published posts count
-      const { count: publishedPosts } = await supabase
-        .from(getTableName("Posts En Ligne") as any)
-        .select("*", { count: "exact", head: true });
+      const { count: publishedPosts, error: postsError } = await supabase
+        .from('posts')
+        .select("*", { count: "exact", head: true })
+        .eq('account_id', user.id);
+
+      if (postsError) {
+        console.error("Error fetching posts:", postsError);
+      }
 
       // Get total leads count
-      const { count: totalLeads } = await supabase
-        .from(getTableName("Leads Linkedin") as any)
-        .select("*", { count: "exact", head: true });
+      const { count: totalLeads, error: leadsError } = await supabase
+        .from('leads')
+        .select("*", { count: "exact", head: true })
+        .eq('user_id', user.id);
 
-      // Get competitors count
-      const { count: competitorsCount } = await supabase
-        .from(getTableName("competitors") as any)
-        .select("*", { count: "exact", head: true });
+      if (leadsError) {
+        console.error("Error fetching leads:", leadsError);
+      }
+
+      // Get total comments count
+      const { count: totalComments, error: commentsError } = await supabase
+        .from('comments')
+        .select("*", { count: "exact", head: true })
+        .eq('account_id', user.id);
+
+      if (commentsError) {
+        console.error("Error fetching comments:", commentsError);
+      }
 
       // Get posts from this month for calculation
       const currentMonth = new Date();
       currentMonth.setDate(1);
-      const { count: postsThisMonth } = await supabase
-        .from(getTableName("Posts En Ligne") as any)
+      currentMonth.setHours(0, 0, 0, 0);
+      
+      const { count: postsThisMonth, error: postsMonthError } = await supabase
+        .from('posts')
         .select("*", { count: "exact", head: true })
+        .eq('account_id', user.id)
         .gte("added_at", currentMonth.toISOString());
 
-      // Get leads from this month
-      const { count: leadsThisMonth } = await supabase
-        .from(getTableName("Leads Linkedin") as any)
-        .select("*", { count: "exact", head: true })
-        .gte("date", currentMonth.toISOString());
-
-      // Get competitor posts for engagement calculation
-      const { data: competitorPosts } = await supabase
-        .from(getTableName("competitor_posts") as any)
-        .select("likes_count, comments_count, repost_count")
-        .not("likes_count", "is", null)
-        .not("comments_count", "is", null)
-        .gte("created_at", currentMonth.toISOString());
-
-      // Calculate average engagement rate
-      let engagementRate = 0;
-      if (competitorPosts && competitorPosts.length > 0) {
-        const totalEngagement = (competitorPosts as any[]).reduce((sum, post) => {
-          const engagement = (post.likes_count || 0) + (post.comments_count || 0) + (post.repost_count || 0);
-          return sum + engagement;
-        }, 0);
-        engagementRate = totalEngagement / competitorPosts.length;
+      if (postsMonthError) {
+        console.error("Error fetching posts this month:", postsMonthError);
       }
 
-      return {
-        publishedPosts: publishedPosts || 0,
-        totalLeads: totalLeads || 0,
-        competitorsCount: competitorsCount || 0,
-        postsThisMonth: postsThisMonth || 0,
-        leadsThisMonth: leadsThisMonth || 0,
-        engagementRate: engagementRate.toFixed(1),
+      // Get leads from this month
+      const { count: leadsThisMonth, error: leadsMonthError } = await supabase
+        .from('leads')
+        .select("*", { count: "exact", head: true })
+        .eq('user_id', user.id)
+        .gte("date", currentMonth.toISOString());
+
+      if (leadsMonthError) {
+        console.error("Error fetching leads this month:", leadsMonthError);
+      }
+
+      // Get comments from this month
+      const { count: commentsThisMonth, error: commentsMonthError } = await supabase
+        .from('comments')
+        .select("*", { count: "exact", head: true })
+        .eq('account_id', user.id)
+        .gte("comment_date", currentMonth.toISOString());
+
+      if (commentsMonthError) {
+        console.error("Error fetching comments this month:", commentsMonthError);
+      }
+
+      const result = {
+        publishedPosts: publishedPosts ?? 0,
+        totalLeads: totalLeads ?? 0,
+        totalComments: totalComments ?? 0,
+        postsThisMonth: postsThisMonth ?? 0,
+        leadsThisMonth: leadsThisMonth ?? 0,
+        commentsThisMonth: commentsThisMonth ?? 0,
       };
+
+      console.log("Dashboard stats:", result);
+      return result;
     },
+    enabled: !!user,
+    refetchOnWindowFocus: true,
   });
 };

@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, Users, Target } from "lucide-react";
+import { TrendingUp, MessageSquare, Target } from "lucide-react";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useRecentActivity } from "@/hooks/useRecentActivity";
 import { useActivityChart } from "@/hooks/useActivityChart";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 export default function Dashboard() {
   const [periodDays, setPeriodDays] = useState(30);
@@ -24,22 +24,22 @@ export default function Dashboard() {
   const statsCards = [
     {
       title: "Posts publiés",
-      value: statsLoading ? "..." : stats?.publishedPosts.toString() || "0",
-      change: `+${stats?.postsThisMonth || 0} ce mois`,
+      value: statsLoading ? "..." : (stats?.publishedPosts ?? 0).toString(),
+      change: `+${stats?.postsThisMonth ?? 0} ce mois`,
       icon: TrendingUp,
       color: "text-primary",
     },
     {
-      title: "Concurrents suivis",
-      value: statsLoading ? "..." : stats?.competitorsCount.toString() || "0",
-      change: "Analyse continue",
-      icon: Users,
+      title: "Commentaires reçus",
+      value: statsLoading ? "..." : (stats?.totalComments ?? 0).toString(),
+      change: `+${stats?.commentsThisMonth ?? 0} ce mois`,
+      icon: MessageSquare,
       color: "text-primary",
     },
     {
       title: "Leads générés",
-      value: statsLoading ? "..." : stats?.totalLeads.toString() || "0",
-      change: `+${stats?.leadsThisMonth || 0} ce mois`,
+      value: statsLoading ? "..." : (stats?.totalLeads ?? 0).toString(),
+      change: `+${stats?.leadsThisMonth ?? 0} ce mois`,
       icon: Target,
       color: "text-primary",
     },
@@ -104,57 +104,100 @@ export default function Dashboard() {
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+              <AreaChart 
+                data={chartData}
+                margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+              >
+                <defs>
+                  <linearGradient id="colorComments" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorDms" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(142 76% 36%)" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="hsl(142 76% 36%)" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorLeads" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(221 83% 53%)" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="hsl(221 83% 53%)" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid 
+                  strokeDasharray="3 3" 
+                  stroke="hsl(var(--border))" 
+                  strokeOpacity={0.2}
+                  vertical={false}
+                />
                 <XAxis 
                   dataKey="date" 
-                  className="text-xs"
-                  tick={{ fill: "hsl(var(--muted-foreground))" }}
+                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                  axisLine={{ stroke: "hsl(var(--border))", strokeOpacity: 0.3 }}
+                  tickLine={false}
                 />
                 <YAxis 
-                  className="text-xs"
-                  tick={{ fill: "hsl(var(--muted-foreground))" }}
+                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={40}
                 />
                 <Tooltip 
                   contentStyle={{
                     backgroundColor: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "8px",
+                    border: "none",
+                    borderRadius: "12px",
+                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+                    padding: "12px 16px",
                   }}
-                  labelStyle={{ color: "hsl(var(--foreground))" }}
+                  labelStyle={{ 
+                    color: "hsl(var(--foreground))", 
+                    fontWeight: 600,
+                    marginBottom: "8px",
+                    fontSize: "14px"
+                  }}
+                  itemStyle={{ 
+                    color: "hsl(var(--foreground))",
+                    fontSize: "13px",
+                    padding: "4px 0"
+                  }}
+                  cursor={{ stroke: "hsl(var(--primary))", strokeWidth: 2, strokeDasharray: "5 5" }}
                 />
                 <Legend 
-                  wrapperStyle={{ paddingTop: "20px" }}
-                  iconType="line"
+                  wrapperStyle={{ paddingTop: "24px" }}
+                  iconType="circle"
+                  iconSize={8}
+                  formatter={(value) => <span style={{ color: "hsl(var(--muted-foreground))", fontSize: "13px" }}>{value}</span>}
                 />
-                <Line 
+                <Area 
                   type="monotone" 
                   dataKey="comments" 
                   name="Commentaires"
                   stroke="hsl(var(--primary))" 
-                  strokeWidth={2}
-                  dot={{ fill: "hsl(var(--primary))", r: 3 }}
-                  activeDot={{ r: 5 }}
+                  strokeWidth={2.5}
+                  fill="url(#colorComments)"
+                  dot={{ fill: "hsl(var(--primary))", r: 4, strokeWidth: 2, stroke: "hsl(var(--card))" }}
+                  activeDot={{ r: 6, strokeWidth: 2, stroke: "hsl(var(--card))" }}
                 />
-                <Line 
+                <Area 
                   type="monotone" 
                   dataKey="dms" 
                   name="DMs envoyés"
                   stroke="hsl(142 76% 36%)" 
-                  strokeWidth={2}
-                  dot={{ fill: "hsl(142 76% 36%)", r: 3 }}
-                  activeDot={{ r: 5 }}
+                  strokeWidth={2.5}
+                  fill="url(#colorDms)"
+                  dot={{ fill: "hsl(142 76% 36%)", r: 4, strokeWidth: 2, stroke: "hsl(var(--card))" }}
+                  activeDot={{ r: 6, strokeWidth: 2, stroke: "hsl(var(--card))" }}
                 />
-                <Line 
+                <Area 
                   type="monotone" 
                   dataKey="leads" 
                   name="Leads"
                   stroke="hsl(221 83% 53%)" 
-                  strokeWidth={2}
-                  dot={{ fill: "hsl(221 83% 53%)", r: 3 }}
-                  activeDot={{ r: 5 }}
+                  strokeWidth={2.5}
+                  fill="url(#colorLeads)"
+                  dot={{ fill: "hsl(221 83% 53%)", r: 4, strokeWidth: 2, stroke: "hsl(var(--card))" }}
+                  activeDot={{ r: 6, strokeWidth: 2, stroke: "hsl(var(--card))" }}
                 />
-              </LineChart>
+              </AreaChart>
             </ResponsiveContainer>
           )}
         </CardContent>

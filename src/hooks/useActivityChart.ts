@@ -11,32 +11,33 @@ export interface ChartDataPoint {
 }
 
 export const useActivityChart = (days: number = 30) => {
-  const { getTableName } = useUser();
+  const { user } = useUser();
 
   return useQuery({
-    queryKey: ["activity-chart", days],
+    queryKey: ["activity-chart", days, user?.id],
     queryFn: async () => {
-      const leadsTableName = getTableName("Leads Linkedin");
-      const postsTableName = getTableName("Posts En Ligne");
+      if (!user) return [];
 
       // Récupérer les données des X derniers jours
       const startDate = startOfDay(subDays(new Date(), days));
 
       // Récupérer tous les leads avec leur date
       const { data: leads, error: leadsError } = await supabase
-        .from(leadsTableName as any)
+        .from('leads')
         .select("date")
+        .eq('user_id', user.id)
         .gte("date", startDate.toISOString());
 
       if (leadsError) throw leadsError;
 
-      // Récupérer les posts avec leurs tables de commentaires
-      const { data: posts, error: postsError } = await supabase
-        .from(postsTableName as any)
-        .select("comments_table_name, added_at")
-        .not("comments_table_name", "is", null);
+      // Récupérer tous les commentaires
+      const { data: comments, error: commentsError } = await supabase
+        .from('comments')
+        .select("comment_date, received_dm")
+        .eq('account_id', user.id)
+        .gte("comment_date", startDate.toISOString());
 
-      if (postsError) throw postsError;
+      if (commentsError) throw commentsError;
 
       // Créer un objet pour agréger les données par date
       const dataMap = new Map<string, ChartDataPoint>();
@@ -64,34 +65,20 @@ export const useActivityChart = (days: number = 30) => {
         }
       });
 
-      // Pour chaque table de commentaires, récupérer les statistiques
-      if (posts) {
-        for (const post of posts as any[]) {
-          if (post.comments_table_name) {
-            try {
-              // Récupérer tous les commentaires de cette table
-              const { data: comments } = await supabase
-                .from(post.comments_table_name)
-                .select("created_at, received_dm")
-                .gte("created_at", startDate.toISOString());
-
-              comments?.forEach((comment: any) => {
-                const dateKey = format(new Date(comment.created_at), "yyyy-MM-dd");
-                if (dataMap.has(dateKey)) {
-                  const existing = dataMap.get(dateKey)!;
-                  dataMap.set(dateKey, {
-                    ...existing,
-                    comments: existing.comments + 1,
-                    dms: existing.dms + (comment.received_dm ? 1 : 0),
-                  });
-                }
-              });
-            } catch (error) {
-              console.error(`Error fetching comments from ${post.comments_table_name}:`, error);
-            }
+      // Compter les commentaires et DMs par jour
+      comments?.forEach((comment: any) => {
+        if (comment.comment_date) {
+          const dateKey = format(new Date(comment.comment_date), "yyyy-MM-dd");
+          if (dataMap.has(dateKey)) {
+            const existing = dataMap.get(dateKey)!;
+            dataMap.set(dateKey, {
+              ...existing,
+              comments: existing.comments + 1,
+              dms: existing.dms + (comment.received_dm ? 1 : 0),
+            });
           }
         }
-      }
+      });
 
       // Convertir la Map en tableau et trier par date
       const chartData = Array.from(dataMap.entries())
