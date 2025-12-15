@@ -7,12 +7,9 @@ import { DashboardLayout } from "./components/layout/DashboardLayout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { UserProvider } from "./contexts/UserContext";
 import Dashboard from "./pages/Dashboard";
-import LeadMagnet from "./pages/LeadMagnet";
 import PostsList from "./pages/PostsList";
-import Competitors from "./pages/Competitors";
-import CompetitorPosts from "./pages/CompetitorPosts";
-import Leads from "./pages/Leads";
-import ContentWatch from "./pages/ContentWatch";
+import LeadMagnet from "./pages/LeadMagnet";
+import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -38,14 +35,6 @@ const App = () => {
               <Route path="/auth" element={<Auth />} />
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route
-                path="/competitor-posts/:competitorId"
-                element={
-                  <ProtectedRoute>
-                    <CompetitorPosts />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
                 path="/"
                 element={
                   <ProtectedRoute>
@@ -54,11 +43,9 @@ const App = () => {
                 }
               >
                 <Route path="dashboard" element={<Dashboard />} />
-                <Route path="content-watch" element={<ContentWatch />} />
-                <Route path="competitors" element={<Competitors />} />
                 <Route path="posts" element={<PostsList />} />
-                <Route path="leads" element={<Leads />} />
                 <Route path="lead-magnet" element={<LeadMagnet />} />
+                <Route path="settings" element={<Settings />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>

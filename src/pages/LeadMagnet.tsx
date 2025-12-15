@@ -1,372 +1,597 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircle, TrendingUp, Users, ExternalLink, Play, Filter } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Loader2, Rocket, Settings, Play } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/contexts/UserContext";
+
+const N8N_WEBHOOK_URL = "https://n8n.srv802543.hstgr.cloud/webhook/leadmagnet";
+
 type Post = {
   id: number;
-  Caption: string | null;
-  post_url: string | null;
+  Caption?: string | null;
+  caption?: string | null;
   added_at: string;
-  comments_table_name: string | null;
-  table_exist: boolean | null;
-  urn_post_id: string | null;
-  Url_lead_magnet: string | null;
-  keyword: string | null;
-  B2B_ou_B2C: string | null;
-  message_prefait: string | null;
+  keyword?: string | null;
+  post_url?: string | null;
+  media?: string | null;
+  urn_post_id?: string | null;
+  Url_lead_magnet?: string | null;
+  url_lead_magnet?: string | null;
+  message_prefait?: string | null;
+  type_post?: string | null;
+  leadmagnet?: boolean | null;
+}
+
+// Helper functions
+const getCaption = (post: Post) => post.Caption || post.caption;
+const getUrlLeadMagnet = (post: Post) => post.Url_lead_magnet || post.url_lead_magnet;
+
+// Fonction pour tronquer la description
+const truncateDescription = (text: string | null | undefined, maxLength: number): string => {
+  if (!text) return '';
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength) + '...';
 };
-type CommentsCount = {
-  total: number;
-  received_dm: number;
-  connection_request: number;
-  not_received_dm: number;
-  not_connection_request: number;
+
+// Fonction pour obtenir les noms de colonnes corrects selon le user type
+const getColumnNames = (userType: string | null) => {
+  if (userType === 'imrane') {
+    return {
+      url_lead_magnet: 'url_lead_magnet',
+    };
+  }
+  return {
+    url_lead_magnet: 'Url_lead_magnet',
+  };
 };
+
+type PostStats = {
+  totalComments: number;
+  dmsSent: number;
+  connectionRequests: number;
+};
+
 export default function LeadMagnet() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const [commentsData, setCommentsData] = useState<Record<number, CommentsCount>>({});
-  const [totalLeads, setTotalLeads] = useState(0);
-  const [loadingPostId, setLoadingPostId] = useState<number | null>(null);
-  const [typeFilter, setTypeFilter] = useState<'all' | 'b2b' | 'tout-le-monde'>('all');
-  const navigate = useNavigate();
-  const {
-    toast
-  } = useToast();
-  const {
-    getTableName,
-    userType
-  } = useUser();
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [configuringPost, setConfiguringPost] = useState<Post | null>(null);
+  const [urlLeadMagnet, setUrlLeadMagnet] = useState("");
+  const [messagePrefait, setMessagePrefait] = useState("");
+  const [launching, setLaunching] = useState<{[key: number]: boolean}>({});
+  const [linkedinAccountId, setLinkedinAccountId] = useState<string | null>(null);
+  const [postStats, setPostStats] = useState<{[key: number]: PostStats}>({});
+  const { toast } = useToast();
+  const { user } = useUser();
+
   useEffect(() => {
     fetchPosts();
-    fetchTotalLeads();
-  }, []);
-  const fetchPosts = async () => {
-    try {
-      const tableName = getTableName("Posts En Ligne");
-      const {
-        data,
-        error
-      } = await supabase.from(tableName as any).select('*').not('comments_table_name', 'is', null).order('added_at', {
-        ascending: false
-      });
-      if (error) throw error;
-      setPosts((data || []) as unknown as Post[]);
+    fetchLinkedinAccountId();
+    
+    const interval = setInterval(() => {
+      fetchPosts();
+    }, 60000);
 
-      // Fetch comments for each post
-      if (data) {
-        for (const post of data as any[]) {
-          if (post.comments_table_name) {
-            // Le nom de table contient déjà le suffixe utilisateur
-            await fetchCommentsCount(post.id, post.comments_table_name);
-          }
-        }
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (posts.length > 0 && user) {
+      fetchPostStats();
+    }
+  }, [posts, user]);
+
+  const fetchLinkedinAccountId = async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("linkedin_account_id")
+        .eq("id", user.id)
+        .single();
+
+      if (error) {
+        console.error("Error fetching linkedin_account_id:", error);
+      } else if (data) {
+        setLinkedinAccountId(data.linkedin_account_id || null);
       }
     } catch (error) {
-      console.error('Error fetching posts:', error);
+      console.error("Error:", error);
+    }
+  };
+
+  const fetchPosts = async () => {
+    try {
+      setLoading(true);
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+      const { data, error } = await supabase
+        .from('posts')
+        .select('*')
+        .eq('account_id', user.id)
+        .not('keyword', 'is', null)
+        .order('added_at', { ascending: false });
+
+      if (error) {
+        console.error('Erreur lors de la récupération des posts:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger les posts",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setPosts((data || []) as unknown as Post[]);
+    } catch (error) {
+      console.error('Erreur:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
-  const fetchCommentsCount = async (postId: number, tableName: string) => {
+
+  const fetchPostStats = async () => {
+    if (!user) return;
+    
     try {
-      const {
-        data,
-        error
-      } = await supabase.rpc('count_comments_by_status', {
-        p_table_name: tableName
-      });
-      if (error) throw error;
-      const result = data as {
-        total: number;
-        received_dm: number;
-        connection_request: number;
-        not_received_dm: number;
-        not_connection_request: number;
-        error?: string;
+      const statsMap: {[key: number]: PostStats} = {};
+      
+      for (const post of posts) {
+        const { data: comments, error } = await supabase
+          .from('comments')
+          .select('received_dm, connection_request_statut')
+          .eq('post_id', post.id)
+          .eq('account_id', user.id);
+
+        if (!error && comments) {
+          statsMap[post.id] = {
+            totalComments: comments.length,
+            dmsSent: comments.filter(c => c.received_dm === true).length,
+            connectionRequests: comments.filter(c => c.connection_request_statut === true).length,
+          };
+        } else {
+          statsMap[post.id] = {
+            totalComments: 0,
+            dmsSent: 0,
+            connectionRequests: 0,
+          };
+        }
+      }
+      
+      setPostStats(statsMap);
+    } catch (error) {
+      console.error('Erreur lors de la récupération des stats:', error);
+    }
+  };
+
+  const isPostActive = (post: Post) => {
+    return !!(getUrlLeadMagnet(post) && post.message_prefait);
+  };
+
+  const handleConfigure = (post: Post) => {
+    setConfiguringPost(post);
+    setUrlLeadMagnet(getUrlLeadMagnet(post) || "");
+    setMessagePrefait(post.message_prefait || "");
+  };
+
+  const handleSaveConfiguration = async () => {
+    if (!configuringPost) return;
+
+    try {
+      const updateData: any = {
+        url_lead_magnet: urlLeadMagnet,
+        message_prefait: messagePrefait,
       };
-      if (result.error) {
-        console.error(`Error in RPC for ${tableName}:`, result.error);
+
+      const { error } = await supabase
+        .from('posts')
+        .update(updateData)
+        .eq('id', configuringPost.id);
+
+      if (error) {
+        console.error('Erreur lors de la mise à jour:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de sauvegarder la configuration",
+          variant: "destructive",
+        });
         return;
       }
-      setCommentsData(prev => ({
-        ...prev,
-        [postId]: {
-          total: result.total || 0,
-          received_dm: result.received_dm || 0,
-          connection_request: result.connection_request || 0,
-          not_received_dm: result.not_received_dm || 0,
-          not_connection_request: result.not_connection_request || 0
-        }
-      }));
-    } catch (error) {
-      console.error(`Error fetching comments for ${tableName}:`, error);
-    }
-  };
-  const fetchTotalLeads = async () => {
-    try {
-      const tableName = getTableName("Leads Linkedin");
-      const {
-        count,
-        error
-      } = await supabase.from(tableName as any).select('*', {
-        count: 'exact',
-        head: true
+
+      // Mettre à jour l'état local
+      setPosts(posts.map(post => 
+        post.id === configuringPost.id 
+          ? { 
+              ...post, 
+              url_lead_magnet: urlLeadMagnet,
+              message_prefait: messagePrefait 
+            }
+          : post
+      ));
+
+      setConfiguringPost(null);
+      setUrlLeadMagnet("");
+      setMessagePrefait("");
+
+      toast({
+        title: "Succès",
+        description: "Configuration sauvegardée",
       });
-      if (error) throw error;
-      setTotalLeads(count || 0);
     } catch (error) {
-      console.error('Error fetching total leads:', error);
-    }
-  };
-  const handleLaunchLeadMagnet = async (post: Post) => {
-    if (!post.urn_post_id) {
+      console.error('Erreur:', error);
       toast({
         title: "Erreur",
-        description: "L'URN du post est manquant",
-        variant: "destructive"
+        description: "Une erreur est survenue",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleLaunch = async (post: Post, event: React.MouseEvent) => {
+    event.stopPropagation();
+    
+    if (!user || !linkedinAccountId) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez vous connecter et configurer votre LinkedIn Account ID dans les paramètres.",
+        variant: "destructive",
       });
       return;
     }
-    setLoadingPostId(post.id);
-    console.log("Lancement du lead magnet pour:", post.urn_post_id);
-    try {
-      // Déterminer l'account_linkedin_id selon l'utilisateur
-      const accountLinkedinId = userType === "bapt" ? "JkoJKDJnQ2uE6Ev-JOtzlg" : "mVOn0dFjTWeGjMB0IBIPTg";
-      // Normaliser l'URL du lead magnet selon le schéma (Url_lead_magnet pour bapt, url_lead_magnet pour imrane)
-      const urlLeadMagnet = (post as any).Url_lead_magnet ?? (post as any).url_lead_magnet ?? null;
+    if (!getUrlLeadMagnet(post) || !post.message_prefait) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez configurer l'URL du lead magnet et le message préfait avant de lancer.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-      const response = await fetch("https://n8n.srv802543.hstgr.cloud/webhook/leadmagnet", {
-        method: "POST",
+    setLaunching(prev => ({ ...prev, [post.id]: true }));
+
+    try {
+      const response = await fetch(N8N_WEBHOOK_URL, {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json"
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          url_lead_magnet: getUrlLeadMagnet(post),
+          account_linkedin_id: linkedinAccountId,
+          message_prefait: post.message_prefait,
+          post_id: post.id,
           urn_post_id: post.urn_post_id,
-          url_lead_magnet: urlLeadMagnet,
-          comments_table_name: post.comments_table_name,
-          keyword: post.keyword,
-          type_post: post.B2B_ou_B2C,
-          account_linkedin_id: accountLinkedinId,
-          leads_table_name: getTableName("Leads Linkedin"),
-          message_prefait: post.message_prefait
-        })
+          user_id: user.id,
+        }),
       });
+
       if (!response.ok) {
-        throw new Error(`Erreur HTTP: ${response.status}`);
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+
       toast({
-        title: "Lead Magnet lancé",
-        description: "La requête a été envoyée avec succès"
+        title: "Succès",
+        description: "Lead magnet lancé avec succès !",
       });
     } catch (error) {
-      console.error("Erreur lors du lancement:", error);
+      console.error('Erreur lors du lancement:', error);
       toast({
         title: "Erreur",
         description: "Impossible de lancer le lead magnet",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
-      setLoadingPostId(null);
+      setLaunching(prev => ({ ...prev, [post.id]: false }));
     }
   };
-  const filteredPosts = posts.filter(post => {
-    // Filtre par type B2B/Tout le monde
-    if (typeFilter === 'b2b' && post.B2B_ou_B2C !== 'B2B') return false;
-    if (typeFilter === 'tout-le-monde' && post.B2B_ou_B2C !== 'All') return false;
-    return true;
-  });
-  const totalComments = Object.values(commentsData).reduce((sum, data) => sum + data.total, 0);
-  const totalReceivedDM = Object.values(commentsData).reduce((sum, data) => sum + data.received_dm, 0);
-  const totalConnectionRequests = Object.values(commentsData).reduce((sum, data) => sum + data.connection_request, 0);
+
   if (loading) {
-    return <div className="space-y-6 animate-fade-in">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold text-foreground">Lead Magnet</h1>
-          <p className="text-muted-foreground text-lg">Chargement...</p>
-        </div>
-      </div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Chargement des posts...</span>
+      </div>
+    );
   }
-  return <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold text-foreground">Lead Magnet</h1>
-        <p className="text-muted-foreground text-lg">
-          Analysez vos posts LinkedIn et récupérez un maximum de leads
-        </p>
-      </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="shadow-card">
-          <CardContent className="p-6">
+  return (
+    <div className="container mx-auto p-6 space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Posts actifs</p>
-                <p className="text-2xl font-bold text-foreground">{posts.length}</p>
-              </div>
-              <div className="h-12 w-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                <TrendingUp className="h-6 w-6 text-primary" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-card">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total commentaires</p>
-                <p className="text-2xl font-bold text-foreground">{totalComments}</p>
-              </div>
-              <div className="h-12 w-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                <MessageCircle className="h-6 w-6 text-primary" />
+          <h1 className="text-3xl font-bold gradient-text">Lead Magnet</h1>
+          <p className="text-muted-foreground mt-2">
+            Configurez et lancez vos lead magnets
+          </p>
               </div>
             </div>
+
+      {posts.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <h3 className="text-lg font-semibold mb-2">Aucun lead magnet trouvé</h3>
+            <p className="text-muted-foreground text-center">
+              Aucun post avec mot-clé n'a été trouvé dans la base de données.
+            </p>
           </CardContent>
         </Card>
-
-        <Card className="shadow-card">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">DM envoyés</p>
-                <p className="text-2xl font-bold text-green-600">{totalReceivedDM}</p>
-              </div>
-              <div className="h-12 w-12 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
-                <MessageCircle className="h-6 w-6 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        
-
-        <Card className="shadow-card">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Leads totaux</p>
-                <p className="text-2xl font-bold text-foreground">{totalLeads}</p>
-              </div>
-              <div className="h-12 w-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                <Users className="h-6 w-6 text-primary" />
-              </div>
-            </div>
-            <Button onClick={() => navigate('/leads')} className="w-full mt-4" variant="outline">
-              Voir tous les leads
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Posts List */}
-      <Card className="shadow-card">
-        <CardHeader>
-          <CardTitle>Posts avec tables créées</CardTitle>
-          <CardDescription>
-            Liste de vos posts LinkedIn avec leurs statistiques de commentaires
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {/* Filter Bar */}
-          <div className="flex items-center gap-2 mb-6 p-3 bg-muted/50 rounded-lg">
-            <Filter className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium text-foreground mr-2">Type:</span>
-            <Button variant={typeFilter === 'all' ? 'default' : 'outline'} size="sm" onClick={() => setTypeFilter('all')}>
-              Tous ({posts.length})
-            </Button>
-            <Button variant={typeFilter === 'tout-le-monde' ? 'default' : 'outline'} size="sm" onClick={() => setTypeFilter('tout-le-monde')}>
-              Tout le monde ({posts.filter(p => p.B2B_ou_B2C === 'All').length})
-            </Button>
-            <Button variant={typeFilter === 'b2b' ? 'default' : 'outline'} size="sm" onClick={() => setTypeFilter('b2b')}>
-              B2B ({posts.filter(p => p.B2B_ou_B2C === 'B2B').length})
-            </Button>
-          </div>
-
-          <div className="space-y-4">
-            {filteredPosts.length === 0 ? <div className="text-center py-12 text-muted-foreground">
-                <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Aucun post avec table créée</p>
-                <p className="text-sm">Les posts doivent avoir une table de commentaires créée</p>
-              </div> : filteredPosts.map(post => {
-            const comments = commentsData[post.id] || {
-              total: 0,
-              received_dm: 0,
-              connection_request: 0,
-              not_received_dm: 0,
-              not_connection_request: 0
-            };
-            return <div key={post.id} className="p-4 border border-border rounded-lg hover:shadow-md transition-all duration-200 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                        <h3 className="font-medium text-foreground truncate pr-4">
-                            Post {post.id} : {((post as any).Caption || (post as any).caption) ? ((post as any).Caption || (post as any).caption).split(' ').slice(0, 3).join(' ') + '...' : 'Sans titre'}
-                          </h3>
-                          <Badge variant={post.B2B_ou_B2C === 'B2B' ? 'default' : 'secondary'} className="text-xs">
-                            {post.B2B_ou_B2C === 'B2B' ? 'B2B' : 'Tout le monde'}
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {posts.map((post) => {
+            const isActive = isPostActive(post);
+            return (
+              <Dialog key={post.id}>
+                <DialogTrigger asChild>
+                  <Card className="flex flex-col cursor-pointer hover:shadow-lg transition-shadow duration-200">
+                    <CardContent className="p-4 space-y-4">
+                      <div className="flex items-start justify-between">
+                        {isActive ? (
+                          <Badge variant="default" className="text-xs bg-green-500/20 text-green-600">
+                            Actif
                           </Badge>
-                        </div>
-                        <div className="flex items-center gap-2 mt-1">
+                        ) : (
                           <Badge variant="secondary" className="text-xs">
-                            {new Date(post.added_at).toLocaleDateString()}
+                            Inactif
                           </Badge>
-                          {post.post_url && <a href={post.post_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1">
-                              Voir le post
-                              <ExternalLink className="h-3 w-3" />
-                            </a>}
+                        )}
+                      </div>
+
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-1">Description:</p>
+                        <p className="text-sm font-medium line-clamp-3">
+                          {truncateDescription(getCaption(post), 150)}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        {post.keyword && (
+                          <div className="flex items-center gap-1">
+                            <p className="text-xs text-muted-foreground">Mot-clé:</p>
+                            <Badge variant="outline" className="text-xs">
+                              {post.keyword}
+                            </Badge>
+                          </div>
+                        )}
+
+                        {post.type_post && (
+                          <div className="flex items-center gap-1">
+                            <p className="text-xs text-muted-foreground">Type:</p>
+                            <Badge variant="outline" className="text-xs capitalize">
+                              {post.type_post}
+                            </Badge>
                         </div>
+                        )}
                       </div>
                       
-                      <div className="flex items-center gap-4">
+                      {postStats[post.id] && (
+                        <div className="pt-2 border-t border-border">
+                          <p className="text-xs text-muted-foreground mb-2">Statistiques:</p>
+                          <div className="grid grid-cols-3 gap-2 text-xs">
                         <div className="text-center">
-                          <p className="text-sm text-muted-foreground">Total</p>
-                          <p className="text-lg font-semibold text-foreground">{comments.total}</p>
+                              <p className="font-semibold text-foreground">{postStats[post.id].totalComments}</p>
+                              <p className="text-muted-foreground">Commentaires</p>
                         </div>
                         <div className="text-center">
-                          <p className="text-sm text-muted-foreground">DM envoyés</p>
-                          <p className="text-lg font-semibold text-green-600">{comments.received_dm}</p>
+                              <p className="font-semibold text-foreground">{postStats[post.id].dmsSent}</p>
+                              <p className="text-muted-foreground">DM envoyés</p>
                         </div>
                         <div className="text-center">
-                          <p className="text-sm text-muted-foreground">Connexions</p>
-                          <p className="text-lg font-semibold text-blue-600">{comments.connection_request}</p>
+                              <p className="font-semibold text-foreground">{postStats[post.id].connectionRequests}</p>
+                              <p className="text-muted-foreground">Connexions</p>
+                            </div>
                         </div>
-                        <div className="text-center">
-                          <p className="text-sm text-muted-foreground">Sans DM</p>
-                          <p className="text-lg font-semibold text-orange-600">{comments.not_received_dm}</p>
                         </div>
-                        <Button onClick={() => handleLaunchLeadMagnet(post)} disabled={loadingPostId === post.id} className="ml-4">
-                          <Play className="h-4 w-4 mr-2" />
-                          {loadingPostId === post.id ? "Envoi..." : "Lancer"}
+                      )}
+
+                      <div className="flex gap-2 pt-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleConfigure(post);
+                          }}
+                        >
+                          <Settings className="h-4 w-4 mr-1" />
+                          Configurer
                         </Button>
+                        {isActive && (
+                          <Button
+                            variant="default"
+                            size="sm"
+                            className="flex-1"
+                            onClick={(e) => handleLaunch(post, e)}
+                            disabled={launching[post.id]}
+                          >
+                            {launching[post.id] ? (
+                              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                            ) : (
+                              <Play className="h-4 w-4 mr-1" />
+                            )}
+                            Lancer
+                          </Button>
+                        )}
                       </div>
+                    </CardContent>
+                  </Card>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Détails du Post {post.id}</DialogTitle>
+                  </DialogHeader>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="font-medium text-sm text-muted-foreground mb-1">Date d'ajout:</h4>
+                      <p className="text-sm">
+                        {post.added_at ? new Date(post.added_at).toLocaleDateString('fr-FR', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        }) : 'Date inconnue'}
+                      </p>
                     </div>
 
-                    {/* Message préfait section */}
-                    {post.message_prefait && <div className="pt-3 border-t border-border">
-                        <div className="flex items-start gap-2">
-                          <div className="flex-1">
-                            <p className="text-sm font-medium text-foreground mb-1">Message préfait:</p>
-                            <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded whitespace-pre-wrap">
-                              {post.message_prefait}
+                    {getCaption(post) && (
+                      <div>
+                        <h4 className="font-medium text-sm text-muted-foreground mb-1">Caption:</h4>
+                        <p className="text-sm leading-relaxed bg-muted/50 p-3 rounded-md whitespace-pre-wrap">
+                          {getCaption(post)}
+                        </p>
+                      </div>
+                    )}
+
+                    {post.media_url && (
+                      <div>
+                        <h4 className="font-medium text-sm text-muted-foreground mb-1">Media:</h4>
+                        {post.media_url.toLowerCase().includes('.pdf') ? (
+                          <div className="bg-muted/50 p-3 rounded-md">
+                            <p className="text-sm mb-2">Document PDF:</p>
+                            <a 
+                              href={post.media_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="text-sm text-primary hover:underline break-all"
+                            >
+                              {post.media_url}
+                            </a>
+                          </div>
+                        ) : (
+                          <div className="bg-muted/50 p-3 rounded-md">
+                            <img 
+                              src={post.media_url} 
+                              alt="Media du post" 
+                              className="max-w-full h-auto rounded-md border"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                const nextEl = target.nextElementSibling as HTMLElement;
+                                if (nextEl) nextEl.style.display = 'block';
+                              }}
+                            />
+                            <p className="text-sm text-muted-foreground hidden">
+                              Impossible de charger l'image: 
+                              <a 
+                                href={post.media_url} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="text-primary hover:underline break-all ml-1"
+                              >
+                                {post.media_url}
+                              </a>
                             </p>
-                            <p className="text-xs text-muted-foreground mt-2 italic">
-                              Modifiez ce message dans la section Détails
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {post.keyword && (
+                      <div>
+                        <h4 className="font-medium text-sm text-muted-foreground mb-1">Mot-clé CTA:</h4>
+                        <p className="text-sm bg-muted/50 p-3 rounded-md">{post.keyword}</p>
+                      </div>
+                    )}
+
+                    {post.post_url && (
+                      <div>
+                        <h4 className="font-medium text-sm text-muted-foreground mb-1">URL du post:</h4>
+                        <a 
+                          href={post.post_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="text-sm text-primary hover:underline break-all bg-muted/50 p-3 rounded-md block"
+                        >
+                          {post.post_url}
+                        </a>
+                      </div>
+                    )}
+
+                    <div>
+                      <h4 className="font-medium text-sm text-muted-foreground mb-1">Statut Lead Magnet:</h4>
+                      <p className="text-sm">
+                        {isActive ? (
+                          <Badge variant="default" className="text-xs bg-green-500/20 text-green-600">
+                            Configuré et prêt
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="text-xs">
+                            Configuration requise
+                          </Badge>
+                        )}
                             </p>
                           </div>
                         </div>
-                      </div>}
-                  </div>;
+                </DialogContent>
+              </Dialog>
+            );
           })}
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+      )}
 
-    </div>;
+      {/* Dialog de configuration */}
+      <Dialog open={!!configuringPost} onOpenChange={(open) => !open && setConfiguringPost(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Configurer le Lead Magnet</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">URL du Lead Magnet:</label>
+              <Input
+                placeholder="https://..."
+                value={urlLeadMagnet}
+                onChange={(e) => setUrlLeadMagnet(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Message préfait:</label>
+              <Textarea
+                placeholder="Entrez votre message préfait..."
+                value={messagePrefait}
+                onChange={(e) => setMessagePrefait(e.target.value)}
+                className="min-h-[120px]"
+              />
+            </div>
+
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setConfiguringPost(null);
+                  setUrlLeadMagnet("");
+                  setMessagePrefait("");
+                }}
+              >
+                Annuler
+              </Button>
+              <Button
+                onClick={handleSaveConfiguration}
+                disabled={!urlLeadMagnet.trim() || !messagePrefait.trim()}
+              >
+                Sauvegarder
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
 }
+

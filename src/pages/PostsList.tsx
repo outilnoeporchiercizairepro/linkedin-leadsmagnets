@@ -1,69 +1,50 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ExternalLink, Database, Loader2, Save, CheckCircle, Filter } from "lucide-react";
+import { Loader2, Rocket } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/contexts/UserContext";
 
 type Post = {
   id: number;
-  Post_id?: number | null;
-  post_id?: number | null;
-  Caption?: string | null;
+  post_id?: string | null;
   caption?: string | null;
   added_at: string;
-  table_exist?: boolean | null;
   keyword?: string | null;
   post_url?: string | null;
-  media?: string | null;
+  media_url?: string | null;
   urn_post_id?: string | null;
-  Url_lead_magnet?: string | null;
   url_lead_magnet?: string | null;
-  leadmagnet?: boolean | null;
   type_post?: string | null;
-  comments_table_name?: string | null;
-  B2B_ou_B2C?: string | null;
-  message_prefait?: string | null;
+  lead_magnet?: boolean | null;
 }
 
-// Helper functions pour gérer les différences de noms de colonnes
-const getCaption = (post: Post) => post.Caption || post.caption;
-const getUrlLeadMagnet = (post: Post) => post.Url_lead_magnet || post.url_lead_magnet;
-const getPostId = (post: Post) => post.Post_id || post.post_id;
+// Helper functions
+const getCaption = (post: Post) => post.caption;
 
-// Fonction pour obtenir les noms de colonnes corrects selon le user type
-const getColumnNames = (userType: string | null) => {
-  if (userType === 'imrane') {
-    return {
-      caption: 'caption',
-      url_lead_magnet: 'url_lead_magnet',
-      post_id: 'post_id'
-    };
-  }
-  return {
-    caption: 'Caption',
-    url_lead_magnet: 'Url_lead_magnet',
-    post_id: 'Post_id'
-  };
+// Fonction pour tronquer la description
+const truncateDescription = (text: string | null | undefined, maxLength: number): string => {
+  if (!text) return '';
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength) + '...';
 };
 
-type FilterOption = 'all' | 'b2b';
+type PostTypeFilter = 'all' | 'normal' | 'leadmagnet';
+type MediaTypeFilter = 'all' | 'image' | 'carousel' | 'video';
 
 export default function PostsList() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const [leadMagnetUrls, setLeadMagnetUrls] = useState<{[key: number]: string}>({});
-  const [messagePrefaits, setMessagePrefaits] = useState<{[key: number]: string}>({});
-  const [filter, setFilter] = useState<FilterOption>('all');
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [postTypeFilter, setPostTypeFilter] = useState<PostTypeFilter>('all');
+  const [mediaTypeFilter, setMediaTypeFilter] = useState<MediaTypeFilter>('all');
   const { toast } = useToast();
-  const { getTableName, userType } = useUser();
+  const { user } = useUser();
 
   useEffect(() => {
     fetchPosts();
@@ -71,19 +52,22 @@ export default function PostsList() {
     // Rafraîchissement automatique toutes les minutes
     const interval = setInterval(() => {
       fetchPosts();
-    }, 60000); // 60000ms = 1 minute
+    }, 60000);
 
-    // Nettoyage de l'interval au démontage du composant
     return () => clearInterval(interval);
   }, []);
 
   const fetchPosts = async () => {
     try {
       setLoading(true);
-      const tableName = getTableName("Posts En Ligne");
+      if (!user) {
+        setLoading(false);
+        return;
+      }
       const { data, error } = await supabase
-        .from(tableName as any)
+        .from('posts')
         .select('*')
+        .eq('account_id', user.id)
         .order('added_at', { ascending: false });
 
       if (error) {
@@ -109,179 +93,22 @@ export default function PostsList() {
     }
   };
 
-  const handleCreateTable = async (postId: number) => {
-    try {
-      // Appeler la fonction RPC pour créer la table avec le user_type
-      const { data, error: rpcError } = await supabase.rpc('create_post_comments_table', {
-        post_id_param: postId,
-        user_type_param: userType
-      });
+  // Filtrer les posts selon les filtres sélectionnés
+  const filteredPosts = posts.filter(post => {
+    // Filtre par type de post
+    if (postTypeFilter === 'leadmagnet' && !post.keyword) return false;
+    if (postTypeFilter === 'normal' && post.keyword) return false;
 
-      if (rpcError) {
-        console.error('RPC Error:', rpcError);
-        toast({
-          title: "Erreur",
-          description: "Impossible de créer la table",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Type assertion pour la réponse
-      const result = data as { success: boolean; error?: string; table_name?: string };
-
-      if (!result.success) {
-        console.error('Function Error:', result.error);
-        toast({
-          title: "Erreur",
-          description: `Erreur lors de la création: ${result.error}`,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Mettre à jour le post avec table_exist = true et le nom de la table
-      const tableName = getTableName("Posts En Ligne");
-      const { error: updateError } = await supabase
-        .from(tableName as any)
-        .update({ 
-          table_exist: true,
-          comments_table_name: result.table_name,
-          leadmagnet: true
-        })
-        .eq('id', postId);
-
-      if (updateError) {
-        console.error('Update error:', updateError);
-        toast({
-          title: "Erreur",
-          description: "Impossible de marquer la table comme créée",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Mettre à jour l'état local
-      setPosts(posts.map(post => 
-        post.id === postId 
-          ? { ...post, table_exist: true, leadmagnet: true }
-          : post
-      ));
-
-      toast({
-        title: "Table créée",
-        description: `Table ${result.table_name} créée avec succès`,
-      });
-    } catch (error) {
-      console.error('Erreur:', error);
-      toast({
-        title: "Erreur",
-        description: "Une erreur est survenue",
-        variant: "destructive",
-      });
+    // Filtre par type de média
+    if (mediaTypeFilter !== 'all') {
+      const postMediaType = post.type_post?.toLowerCase() || '';
+      if (mediaTypeFilter === 'image' && postMediaType !== 'image') return false;
+      if (mediaTypeFilter === 'carousel' && postMediaType !== 'carousel') return false;
+      if (mediaTypeFilter === 'video' && postMediaType !== 'video') return false;
     }
-  };
 
-  const handleUpdateLeadMagnet = async (postId: number, url: string) => {
-    try {
-      const tableName = getTableName("Posts En Ligne");
-      const columnNames = getColumnNames(userType);
-      
-      const updateData = {
-        [columnNames.url_lead_magnet]: url
-      };
-      
-      const { error } = await supabase
-        .from(tableName as any)
-        .update(updateData as any)
-        .eq('id', postId);
-
-      if (error) {
-        console.error('Erreur lors de la mise à jour:', error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de mettre à jour l'URL du lead magnet",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Mettre à jour l'état local
-      setPosts(posts.map(post => {
-        if (post.id === postId) {
-          if (userType === 'imrane') {
-            return { ...post, url_lead_magnet: url };
-          } else {
-            return { ...post, Url_lead_magnet: url };
-          }
-        }
-        return post;
-      }));
-
-      // Vider le champ input
-      setLeadMagnetUrls(prev => ({
-        ...prev,
-        [postId]: ''
-      }));
-
-      toast({
-        title: "Succès",
-        description: "URL du lead magnet mise à jour",
-      });
-    } catch (error) {
-      console.error('Erreur:', error);
-      toast({
-        title: "Erreur",
-        description: "Une erreur est survenue",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleUpdateMessage = async (postId: number, message: string) => {
-    try {
-      const tableName = getTableName("Posts En Ligne");
-      const { error } = await supabase
-        .from(tableName as any)
-        .update({ message_prefait: message } as any)
-        .eq('id', postId);
-
-      if (error) {
-        console.error('Erreur lors de la mise à jour:', error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de mettre à jour le message préfait",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Mettre à jour l'état local
-      setPosts(posts.map(post => 
-        post.id === postId 
-          ? { ...post, message_prefait: message }
-          : post
-      ));
-
-      // Vider le champ input
-      setMessagePrefaits(prev => ({
-        ...prev,
-        [postId]: ''
-      }));
-
-      toast({
-        title: "Succès",
-        description: "Message préfait mis à jour",
-      });
-    } catch (error) {
-      console.error('Erreur:', error);
-      toast({
-        title: "Erreur",
-        description: "Une erreur est survenue",
-        variant: "destructive",
-      });
-    }
-  };
+    return true;
+  });
 
   if (loading) {
     return (
@@ -291,17 +118,6 @@ export default function PostsList() {
       </div>
     );
   }
-
-  // Filtrer les posts selon le filtre sélectionné
-  const filteredPosts = posts.filter(post => {
-    if (filter === 'all') {
-      return post.B2B_ou_B2C === 'All';
-    }
-    if (filter === 'b2b') {
-      return post.B2B_ou_B2C === 'B2B';
-    }
-    return true;
-  });
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -322,19 +138,28 @@ export default function PostsList() {
         </div>
       </div>
 
-      {/* Barre de filtres */}
+      {/* Filtres */}
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-medium">Filtrer:</span>
-        </div>
-        <Select value={filter} onValueChange={(value: FilterOption) => setFilter(value)}>
+        <Select value={postTypeFilter} onValueChange={(value: PostTypeFilter) => setPostTypeFilter(value)}>
           <SelectTrigger className="w-[200px] bg-background">
-            <SelectValue placeholder="Sélectionner un filtre" />
+            <SelectValue placeholder="Type de post" />
           </SelectTrigger>
           <SelectContent className="bg-background z-50">
-            <SelectItem value="all">Tout le monde</SelectItem>
-            <SelectItem value="b2b">B2B</SelectItem>
+            <SelectItem value="all">Tous</SelectItem>
+            <SelectItem value="normal">Normal</SelectItem>
+            <SelectItem value="leadmagnet">Lead Magnet</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={mediaTypeFilter} onValueChange={(value: MediaTypeFilter) => setMediaTypeFilter(value)}>
+          <SelectTrigger className="w-[200px] bg-background">
+            <SelectValue placeholder="Type de média" />
+          </SelectTrigger>
+          <SelectContent className="bg-background z-50">
+            <SelectItem value="all">Tous</SelectItem>
+            <SelectItem value="image">Image</SelectItem>
+            <SelectItem value="carousel">Carousel</SelectItem>
+            <SelectItem value="video">Vidéo</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -342,7 +167,6 @@ export default function PostsList() {
       {posts.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
-            <CheckCircle className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">Aucun post trouvé</h3>
             <p className="text-muted-foreground text-center">
               Aucun post n'a été trouvé dans la base de données.
@@ -352,7 +176,6 @@ export default function PostsList() {
       ) : filteredPosts.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
-            <Filter className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">Aucun post correspondant</h3>
             <p className="text-muted-foreground text-center">
               Aucun post ne correspond aux filtres sélectionnés.
@@ -365,15 +188,18 @@ export default function PostsList() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[120px]">Date</TableHead>
-                <TableHead>Titre</TableHead>
-                <TableHead className="w-[150px]">Mot-clé</TableHead>
-                <TableHead className="w-[150px]">Lead Magnet</TableHead>
-                <TableHead className="w-[250px] text-right">Actions</TableHead>
+                <TableHead className="w-[50%]">Description</TableHead>
+                <TableHead className="w-[20%]">Type de post</TableHead>
+                <TableHead className="w-[20%]">Type de média</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredPosts.map((post) => (
-                <TableRow key={post.id}>
+                <TableRow 
+                  key={post.id}
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => setSelectedPost(post)}
+                >
                   <TableCell className="text-sm">
                     {post.added_at ? new Date(post.added_at).toLocaleDateString('fr-FR', {
                       day: 'numeric',
@@ -381,54 +207,47 @@ export default function PostsList() {
                     }) : '-'}
                   </TableCell>
                   <TableCell className="font-medium">
-                    {(() => {
-                      const description = getCaption(post) || '';
-                      const firstSixWords = description.split(' ').slice(0, 6).join(' ');
-                      return firstSixWords || `Post ${post.id}`;
-                    })()}
+                    {truncateDescription(getCaption(post), 100) || `Post ${post.id}`}
                   </TableCell>
                   <TableCell>
                     {post.keyword ? (
-                      <Badge variant="outline" className="text-xs">
-                        {post.keyword}
+                      <Badge variant="default" className="text-xs bg-primary/20 text-primary hover:bg-primary/30">
+                        <Rocket className="h-3 w-3 mr-1" /> Lead Magnet
                       </Badge>
                     ) : (
-                      <span className="text-muted-foreground text-xs">-</span>
+                      <Badge variant="secondary" className="text-xs">Normal</Badge>
                     )}
                   </TableCell>
                   <TableCell>
-                    {getUrlLeadMagnet(post) && post.keyword && post.comments_table_name ? (
-                      <Badge variant="default" className="text-xs">
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Configuré
-                      </Badge>
-                    ) : post.comments_table_name ? (
-                      <Badge variant="secondary" className="text-xs">
-                        En attente
+                    {post.type_post ? (
+                      <Badge variant="outline" className="text-xs capitalize">
+                        {post.type_post}
                       </Badge>
                     ) : (
                       <span className="text-muted-foreground text-xs">-</span>
                     )}
                   </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex gap-2 justify-end">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            <ExternalLink className="h-4 w-4 mr-1" />
-                            Détail
-                          </Button>
-                        </DialogTrigger>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </ScrollArea>
+      )}
+
+      {/* Dialog de détails du post */}
+      <Dialog open={!!selectedPost} onOpenChange={(open) => !open && setSelectedPost(null)}>
                         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          {selectedPost && (
+            <>
                           <DialogHeader>
-                            <DialogTitle>Détails du Post {post.id}</DialogTitle>
+                <DialogTitle>Détails du Post {selectedPost.id}</DialogTitle>
                           </DialogHeader>
                           
                           <div className="space-y-4">
                             <div>
                               <h4 className="font-medium text-sm text-muted-foreground mb-1">Date d'ajout:</h4>
                               <p className="text-sm">
-                                {post.added_at ? new Date(post.added_at).toLocaleDateString('fr-FR', {
+                    {selectedPost.added_at ? new Date(selectedPost.added_at).toLocaleDateString('fr-FR', {
                                   day: 'numeric',
                                   month: 'long',
                                   year: 'numeric',
@@ -438,211 +257,106 @@ export default function PostsList() {
                               </p>
                             </div>
 
-                            {getCaption(post) && (
-                              <div>
-                                <h4 className="font-medium text-sm text-muted-foreground mb-1">Caption:</h4>
-                                <p className="text-sm leading-relaxed bg-muted/50 p-3 rounded-md whitespace-pre-wrap">{getCaption(post)}</p>
-                              </div>
-                            )}
+                    {getCaption(selectedPost) && (
+                      <div>
+                        <h4 className="font-medium text-sm text-muted-foreground mb-1">Caption:</h4>
+                        <p className="text-sm leading-relaxed bg-muted/50 p-3 rounded-md whitespace-pre-wrap">
+                          {getCaption(selectedPost)}
+                        </p>
+                      </div>
+                    )}
 
-                            {post.media && (
-                              <div>
-                                <h4 className="font-medium text-sm text-muted-foreground mb-1">Media:</h4>
-                                {post.media.toLowerCase().includes('.pdf') ? (
-                                  <div className="bg-muted/50 p-3 rounded-md">
-                                    <p className="text-sm mb-2">Document PDF:</p>
-                                    <a 
-                                      href={post.media} 
-                                      target="_blank" 
-                                      rel="noopener noreferrer" 
-                                      className="text-sm text-primary hover:underline break-all"
-                                    >
-                                      {post.media}
-                                    </a>
-                                  </div>
-                                ) : (
-                                  <div className="bg-muted/50 p-3 rounded-md">
-                                    <img 
-                                      src={post.media} 
-                                      alt="Media du post" 
-                                      className="max-w-full h-auto rounded-md border"
-                                      onError={(e) => {
-                                        const target = e.target as HTMLImageElement;
-                                        target.style.display = 'none';
-                                        const nextEl = target.nextElementSibling as HTMLElement;
-                                        if (nextEl) nextEl.style.display = 'block';
-                                      }}
-                                    />
-                                    <p className="text-sm text-muted-foreground hidden">
-                                      Impossible de charger l'image: 
-                                      <a 
-                                        href={post.media} 
-                                        target="_blank" 
-                                        rel="noopener noreferrer" 
-                                        className="text-primary hover:underline break-all ml-1"
-                                      >
-                                        {post.media}
-                                      </a>
-                                    </p>
-                                  </div>
-                                )}
-                              </div>
-                            )}
+                    {selectedPost.media_url && (
+                      <div>
+                        <h4 className="font-medium text-sm text-muted-foreground mb-1">Media:</h4>
+                        {selectedPost.media_url.toLowerCase().includes('.pdf') ? (
+                          <div className="bg-muted/50 p-3 rounded-md">
+                            <p className="text-sm mb-2">Document PDF:</p>
+                            <a 
+                              href={selectedPost.media_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="text-sm text-primary hover:underline break-all"
+                            >
+                              {selectedPost.media_url}
+                            </a>
+                          </div>
+                        ) : (
+                          <div className="bg-muted/50 p-3 rounded-md">
+                            <img 
+                              src={selectedPost.media_url} 
+                              alt="Media du post" 
+                              className="max-w-full h-auto rounded-md border"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                const nextEl = target.nextElementSibling as HTMLElement;
+                                if (nextEl) nextEl.style.display = 'block';
+                              }}
+                            />
+                            <p className="text-sm text-muted-foreground hidden">
+                              Impossible de charger l'image: 
+                              <a 
+                                href={selectedPost.media_url} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="text-primary hover:underline break-all ml-1"
+                              >
+                                {selectedPost.media_url}
+                              </a>
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
-                            {post.keyword && (
+                {selectedPost.keyword && (
                               <div>
                                 <h4 className="font-medium text-sm text-muted-foreground mb-1">Mot-clé CTA:</h4>
-                                <p className="text-sm bg-muted/50 p-3 rounded-md">{post.keyword}</p>
+                    <p className="text-sm bg-muted/50 p-3 rounded-md">{selectedPost.keyword}</p>
                               </div>
                             )}
 
-                            {post.post_url && (
+                {selectedPost.post_url && (
                               <div>
                                 <h4 className="font-medium text-sm text-muted-foreground mb-1">URL du post:</h4>
                                 <a 
-                                  href={post.post_url} 
+                      href={selectedPost.post_url} 
                                   target="_blank" 
                                   rel="noopener noreferrer" 
                                   className="text-sm text-primary hover:underline break-all bg-muted/50 p-3 rounded-md block"
                                 >
-                                  {post.post_url}
+                      {selectedPost.post_url}
                                 </a>
                               </div>
                             )}
 
-                            {post.comments_table_name && post.B2B_ou_B2C !== 'B2B' && (
                               <div>
-                                <h4 className="font-medium text-sm text-muted-foreground mb-1">Lead Magnet URL:</h4>
-                                {!getUrlLeadMagnet(post) ? (
-                                  <div className="flex gap-2">
-                                    <Input
-                                      placeholder="Coller l'URL du lead magnet..."
-                                      value={leadMagnetUrls[post.id] || ''}
-                                      onChange={(e) => setLeadMagnetUrls(prev => ({
-                                        ...prev,
-                                        [post.id]: e.target.value
-                                      }))}
-                                      className="flex-1"
-                                    />
-                                    <Button
-                                      size="sm"
-                                      onClick={() => handleUpdateLeadMagnet(post.id, leadMagnetUrls[post.id] || '')}
-                                      disabled={!leadMagnetUrls[post.id]?.trim()}
-                                    >
-                                      <Save className="h-4 w-4 mr-1" />
-                                      OK
-                                    </Button>
-                                  </div>
-                                ) : (
-                                  <div className="flex items-center gap-2 text-xs bg-green-50 dark:bg-green-900/20 p-2 rounded border border-green-200 dark:border-green-800">
-                                    <CheckCircle className="h-4 w-4 text-green-600" />
-                                    <span className="text-green-700 dark:text-green-300 font-medium">Lead magnet configuré</span>
-                                    <a 
-                                      href={getUrlLeadMagnet(post)} 
-                                      target="_blank" 
-                                      rel="noopener noreferrer" 
-                                      className="text-primary hover:underline break-all ml-auto"
-                                    >
-                                      Voir le lien
-                                    </a>
-                                  </div>
-                                )}
+                  <h4 className="font-medium text-sm text-muted-foreground mb-1">Type de post:</h4>
+                  <p className="text-sm">
+                    {selectedPost.keyword ? (
+                      <Badge variant="default" className="text-xs bg-primary/20 text-primary">
+                        <Rocket className="h-3 w-3 mr-1" /> Lead Magnet
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary" className="text-xs">Normal</Badge>
+                    )}
+                  </p>
                               </div>
-                            )}
 
-                            {post.comments_table_name && (
+                {selectedPost.type_post && (
                               <div>
-                                <h4 className="font-medium text-sm text-muted-foreground mb-1">Message préfait:</h4>
-                                <div className="space-y-2">
-                                  <div className="text-xs text-muted-foreground bg-muted/30 p-2 rounded space-y-1">
-                                    <p>Variables disponibles:</p>
-                                    <p>• Prénom: {`{{ $json.person_name.split(' ')[0] }}`}</p>
-                                    <p>• URL lead magnet: {`{{ $('Webhook4').first().json.body.url_lead_magnet}}`}</p>
-                                  </div>
-                                  {!post.message_prefait ? (
-                                    <div className="flex flex-col gap-2">
-                                      <textarea
-                                        placeholder="Entrez votre message préfait avec les variables..."
-                                        value={messagePrefaits[post.id] || ''}
-                                        onChange={(e) => setMessagePrefaits(prev => ({
-                                          ...prev,
-                                          [post.id]: e.target.value
-                                        }))}
-                                        className="w-full min-h-[120px] p-3 text-sm border border-border rounded-md bg-background text-foreground resize-y"
-                                      />
-                                      <Button
-                                        size="sm"
-                                        onClick={() => handleUpdateMessage(post.id, messagePrefaits[post.id] || '')}
-                                        disabled={!messagePrefaits[post.id]?.trim()}
-                                      >
-                                        <Save className="h-4 w-4 mr-1" />
-                                        Sauvegarder le message
-                                      </Button>
-                                    </div>
-                                  ) : (
-                                    <div className="flex flex-col gap-2">
-                                      <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded border border-green-200 dark:border-green-800">
-                                        <div className="flex items-start gap-2 mb-2">
-                                          <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
-                                          <span className="text-green-700 dark:text-green-300 font-medium text-xs">Message configuré</span>
-                                        </div>
-                                        <p className="text-sm text-foreground whitespace-pre-wrap">{post.message_prefait}</p>
-                                      </div>
-                                      <textarea
-                                        placeholder="Modifier le message préfait..."
-                                        value={messagePrefaits[post.id] || ''}
-                                        onChange={(e) => setMessagePrefaits(prev => ({
-                                          ...prev,
-                                          [post.id]: e.target.value
-                                        }))}
-                                        className="w-full min-h-[120px] p-3 text-sm border border-border rounded-md bg-background text-foreground resize-y"
-                                      />
-                                      <Button
-                                        size="sm"
-                                        onClick={() => handleUpdateMessage(post.id, messagePrefaits[post.id] || '')}
-                                        disabled={!messagePrefaits[post.id]?.trim()}
-                                      >
-                                        <Save className="h-4 w-4 mr-1" />
-                                        Modifier le message
-                                      </Button>
+                    <h4 className="font-medium text-sm text-muted-foreground mb-1">Type de média:</h4>
+                    <Badge variant="outline" className="text-xs capitalize">
+                      {selectedPost.type_post}
+                    </Badge>
                                     </div>
                                   )}
                                 </div>
-                              </div>
+            </>
                             )}
-                          </div>
                         </DialogContent>
                       </Dialog>
-
-                      {post.keyword && (
-                        !post.comments_table_name ? (
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => handleCreateTable(post.id)}
-                          >
-                            <Database className="h-4 w-4 mr-1" />
-                            Créer table
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            disabled
-                          >
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                            Table créée
-                          </Button>
-                        )
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </ScrollArea>
-      )}
     </div>
   );
 }
