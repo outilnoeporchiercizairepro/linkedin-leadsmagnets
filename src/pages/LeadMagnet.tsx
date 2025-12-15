@@ -14,41 +14,27 @@ const N8N_WEBHOOK_URL = "https://n8n.srv802543.hstgr.cloud/webhook/leadmagnet";
 
 type Post = {
   id: number;
-  Caption?: string | null;
   caption?: string | null;
   added_at: string;
   keyword?: string | null;
   post_url?: string | null;
-  media?: string | null;
+  media_url?: string | null;
   urn_post_id?: string | null;
-  Url_lead_magnet?: string | null;
   url_lead_magnet?: string | null;
   message_prefait?: string | null;
   type_post?: string | null;
-  leadmagnet?: boolean | null;
+  lead_magnet?: boolean | null;
 }
 
 // Helper functions
-const getCaption = (post: Post) => post.Caption || post.caption;
-const getUrlLeadMagnet = (post: Post) => post.Url_lead_magnet || post.url_lead_magnet;
+const getCaption = (post: Post) => post.caption;
+const getUrlLeadMagnet = (post: Post) => post.url_lead_magnet;
 
 // Fonction pour tronquer la description
 const truncateDescription = (text: string | null | undefined, maxLength: number): string => {
   if (!text) return '';
   if (text.length <= maxLength) return text;
   return text.substring(0, maxLength) + '...';
-};
-
-// Fonction pour obtenir les noms de colonnes corrects selon le user type
-const getColumnNames = (userType: string | null) => {
-  if (userType === 'imrane') {
-    return {
-      url_lead_magnet: 'url_lead_magnet',
-    };
-  }
-  return {
-    url_lead_magnet: 'Url_lead_magnet',
-  };
 };
 
 type PostStats = {
@@ -274,6 +260,7 @@ export default function LeadMagnet() {
           message_prefait: post.message_prefait,
           post_id: post.id,
           urn_post_id: post.urn_post_id,
+          keyword: post.keyword,
           user_id: user.id,
         }),
       });
