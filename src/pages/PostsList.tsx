@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Rocket } from "lucide-react";
+import { Loader2, Rocket, Download, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/contexts/UserContext";
@@ -37,10 +38,15 @@ const truncateDescription = (text: string | null | undefined, maxLength: number)
 type PostTypeFilter = 'all' | 'normal' | 'leadmagnet';
 type MediaTypeFilter = 'all' | 'image' | 'carousel' | 'video';
 
+const N8N_WEBHOOK_FETCH_POST_URL = "https://n8n.srv802543.hstgr.cloud/webhook/récupération-post";
+
 export default function PostsList() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchingPost, setFetchingPost] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [postToDelete, setPostToDelete] = useState<Post | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [postTypeFilter, setPostTypeFilter] = useState<PostTypeFilter>('all');
   const [mediaTypeFilter, setMediaTypeFilter] = useState<MediaTypeFilter>('all');
   const { toast } = useToast();
@@ -93,6 +99,93 @@ export default function PostsList() {
     }
   };
 
+  const handleDeletePost = async () => {
+    if (!postToDelete || !user) {
+      return;
+    }
+
+    setDeleting(true);
+
+    try {
+      const { error } = await supabase
+        .from('posts')
+        .delete()
+        .eq('id', postToDelete.id)
+        .eq('account_id', user.id);
+
+      if (error) {
+        throw error;
+      }
+
+      // Mettre à jour la liste des posts
+      setPosts(posts.filter(post => post.id !== postToDelete.id));
+      setPostToDelete(null);
+
+      toast({
+        title: "Succès",
+        description: "Post supprimé avec succès",
+      });
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer le post",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleFetchLastPost = async () => {
+    if (!user || !user.email) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez vous connecter pour récupérer le dernier post",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setFetchingPost(true);
+
+    try {
+      const response = await fetch(N8N_WEBHOOK_FETCH_POST_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: user.email,
+          user_id: user.id,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      toast({
+        title: "Succès",
+        description: "Récupération du dernier post déclenchée. Les posts seront mis à jour automatiquement.",
+      });
+
+      // Rafraîchir les posts après un court délai
+      setTimeout(() => {
+        fetchPosts();
+      }, 3000);
+    } catch (error) {
+      console.error('Erreur lors de la récupération du post:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de récupérer le dernier post",
+        variant: "destructive",
+      });
+    } finally {
+      setFetchingPost(false);
+    }
+  };
+
   // Filtrer les posts selon les filtres sélectionnés
   const filteredPosts = posts.filter(post => {
     // Filtre par type de post
@@ -128,12 +221,31 @@ export default function PostsList() {
             Tous les posts de la base de données
           </p>
         </div>
-        <div className="text-right">
-          <div className="text-sm text-muted-foreground">
-            {filteredPosts.length} post{filteredPosts.length > 1 ? 's' : ''} affiché{filteredPosts.length > 1 ? 's' : ''} sur {posts.length}
-          </div>
-          <div className="text-xs text-muted-foreground">
-            Actualisé automatiquement
+        <div className="flex items-center gap-4">
+          <Button
+            onClick={handleFetchLastPost}
+            disabled={fetchingPost || !user}
+            variant="default"
+          >
+            {fetchingPost ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Récupération...
+              </>
+            ) : (
+              <>
+                <Download className="h-4 w-4 mr-2" />
+                Récupérer dernier post
+              </>
+            )}
+          </Button>
+          <div className="text-right">
+            <div className="text-sm text-muted-foreground">
+              {filteredPosts.length} post{filteredPosts.length > 1 ? 's' : ''} affiché{filteredPosts.length > 1 ? 's' : ''} sur {posts.length}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Actualisé automatiquement
+            </div>
           </div>
         </div>
       </div>
@@ -188,28 +300,37 @@ export default function PostsList() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[120px]">Date</TableHead>
-                <TableHead className="w-[50%]">Description</TableHead>
+                <TableHead className="w-[40%]">Description</TableHead>
                 <TableHead className="w-[20%]">Type de post</TableHead>
                 <TableHead className="w-[20%]">Type de média</TableHead>
+                <TableHead className="w-[10%] text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredPosts.map((post) => (
                 <TableRow 
                   key={post.id}
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => setSelectedPost(post)}
+                  className="hover:bg-muted/50"
                 >
-                  <TableCell className="text-sm">
+                  <TableCell 
+                    className="text-sm cursor-pointer"
+                    onClick={() => setSelectedPost(post)}
+                  >
                     {post.added_at ? new Date(post.added_at).toLocaleDateString('fr-FR', {
                       day: 'numeric',
                       month: 'short',
                     }) : '-'}
                   </TableCell>
-                  <TableCell className="font-medium">
+                  <TableCell 
+                    className="font-medium cursor-pointer"
+                    onClick={() => setSelectedPost(post)}
+                  >
                     {truncateDescription(getCaption(post), 100) || `Post ${post.id}`}
                   </TableCell>
-                  <TableCell>
+                  <TableCell 
+                    onClick={() => setSelectedPost(post)}
+                    className="cursor-pointer"
+                  >
                     {post.keyword ? (
                       <Badge variant="default" className="text-xs bg-primary/20 text-primary hover:bg-primary/30">
                         <Rocket className="h-3 w-3 mr-1" /> Lead Magnet
@@ -218,7 +339,10 @@ export default function PostsList() {
                       <Badge variant="secondary" className="text-xs">Normal</Badge>
                     )}
                   </TableCell>
-                  <TableCell>
+                  <TableCell 
+                    onClick={() => setSelectedPost(post)}
+                    className="cursor-pointer"
+                  >
                     {post.type_post ? (
                       <Badge variant="outline" className="text-xs capitalize">
                         {post.type_post}
@@ -226,6 +350,19 @@ export default function PostsList() {
                     ) : (
                       <span className="text-muted-foreground text-xs">-</span>
                     )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPostToDelete(post);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -357,6 +494,54 @@ export default function PostsList() {
                             )}
                         </DialogContent>
                       </Dialog>
+
+      {/* Dialog de confirmation de suppression */}
+      <Dialog open={!!postToDelete} onOpenChange={(open) => !open && setPostToDelete(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmer la suppression</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer ce post ? Cette action est irréversible.
+              {postToDelete && (
+                <div className="mt-2 p-2 bg-muted rounded text-sm">
+                  <p className="font-medium">Post #{postToDelete.id}</p>
+                  {getCaption(postToDelete) && (
+                    <p className="text-muted-foreground mt-1 line-clamp-2">
+                      {truncateDescription(getCaption(postToDelete), 100)}
+                    </p>
+                  )}
+                </div>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setPostToDelete(null)}
+              disabled={deleting}
+            >
+              Annuler
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeletePost}
+              disabled={deleting}
+            >
+              {deleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Suppression...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Supprimer
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
