@@ -1,4 +1,4 @@
-# Welcome to your Lovable project
+# linkedin-generation-leads-organic
 
 ## Project info
 
