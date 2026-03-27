@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/contexts/UserContext";
 
-const N8N_WEBHOOK_URL = "https://n8n.srv802543.hstgr.cloud/webhook/leadmagnet";
+const N8N_WEBHOOK_URL = import.meta.env.VITE_N8N_WEBHOOK_LEADMAGNET_URL;
 
 type Post = {
   id: number;

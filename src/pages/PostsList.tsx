@@ -38,7 +38,7 @@ const truncateDescription = (text: string | null | undefined, maxLength: number)
 type PostTypeFilter = 'all' | 'normal' | 'leadmagnet';
 type MediaTypeFilter = 'all' | 'image' | 'carousel' | 'video';
 
-const N8N_WEBHOOK_FETCH_POST_URL = "https://n8n.srv802543.hstgr.cloud/webhook/récupération-post";
+const N8N_WEBHOOK_FETCH_POST_URL = import.meta.env.VITE_N8N_WEBHOOK_FETCH_POST_URL;
 
 export default function PostsList() {
   const [posts, setPosts] = useState<Post[]>([]);
