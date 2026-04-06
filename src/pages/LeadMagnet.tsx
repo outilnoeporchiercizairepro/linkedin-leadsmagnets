@@ -52,6 +52,8 @@ export default function LeadMagnet() {
   const [messagePrefait, setMessagePrefait] = useState("");
   const [launching, setLaunching] = useState<{[key: number]: boolean}>({});
   const [linkedinAccountId, setLinkedinAccountId] = useState<string | null>(null);
+  const [linkedinUrl, setLinkedinUrl] = useState<string | null>(null);
+  const [webhookUrl, setWebhookUrl] = useState<string | null>(null);
   const [postStats, setPostStats] = useState<{[key: number]: PostStats}>({});
   const { toast } = useToast();
   const { user } = useUser();
@@ -65,7 +67,7 @@ export default function LeadMagnet() {
     }, 60000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     if (posts.length > 0 && user) {
@@ -78,14 +80,16 @@ export default function LeadMagnet() {
     try {
       const { data, error } = await supabase
         .from("profiles")
-        .select("linkedin_account_id")
+        .select("linkedin_account_id, n8n_webhook_url, linkedin_url")
         .eq("id", user.id)
         .single();
 
       if (error) {
-        console.error("Error fetching linkedin_account_id:", error);
+        console.error("Error fetching profile settings:", error);
       } else if (data) {
         setLinkedinAccountId(data.linkedin_account_id || null);
+        setLinkedinUrl(data.linkedin_url || null);
+        setWebhookUrl(data.n8n_webhook_url || null);
       }
     } catch (error) {
       console.error("Error:", error);
@@ -249,14 +253,42 @@ export default function LeadMagnet() {
     setLaunching(prev => ({ ...prev, [post.id]: true }));
 
     try {
-      const response = await fetch(N8N_WEBHOOK_URL, {
+      // Récupérer les paramètres les plus récents juste avant le lancement
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("linkedin_account_id, n8n_webhook_url, linkedin_url")
+        .eq("id", user.id)
+        .single();
+
+      const latestLinkedinAccountId = profile?.linkedin_account_id || linkedinAccountId;
+      const latestLinkedinUrl = profile?.linkedin_url || linkedinUrl;
+      const latestWebhookUrl = profile?.n8n_webhook_url || webhookUrl || N8N_WEBHOOK_URL;
+
+      if (!latestLinkedinAccountId) {
+        toast({
+          title: "Erreur",
+          description: "Veuillez configurer votre LinkedIn Account ID dans les paramètres.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log("🚀 Lancement du lead magnet...", {
+        webhook: latestWebhookUrl,
+        post_id: post.id,
+        account_id: latestLinkedinAccountId
+      });
+
+      const response = await fetch(latestWebhookUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          action: "launch_lead_magnet",
           url_lead_magnet: getUrlLeadMagnet(post),
-          account_linkedin_id: linkedinAccountId,
+          linkedin_account_id: latestLinkedinAccountId,
+          linkedin_url: latestLinkedinUrl,
           message_prefait: post.message_prefait,
           post_id: post.id,
           urn_post_id: post.urn_post_id,
@@ -266,18 +298,20 @@ export default function LeadMagnet() {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        console.error("❌ Erreur Webhook:", response.status, errorData);
+        throw new Error(`Erreur serveur (${response.status}): ${errorData.message || 'Workflow n8n échoué'}`);
       }
 
       toast({
         title: "Succès",
         description: "Lead magnet lancé avec succès !",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erreur lors du lancement:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de lancer le lead magnet",
+        description: error.message || "Impossible de lancer le lead magnet",
         variant: "destructive",
       });
     } finally {

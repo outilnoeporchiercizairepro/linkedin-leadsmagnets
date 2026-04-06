@@ -5,8 +5,8 @@ import { User, Session } from "@supabase/supabase-js";
 type UserType = "bapt" | "imrane";
 
 type TableName = 
-  | "Leads Linkedin"
-  | "Posts En Ligne"
+  | "leads"
+  | "posts_en_ligne"
   | "competitors"
   | "competitor_posts";
 

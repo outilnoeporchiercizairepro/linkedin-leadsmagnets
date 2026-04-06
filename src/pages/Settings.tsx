@@ -12,6 +12,8 @@ const N8N_WEBHOOK_URL = import.meta.env.VITE_N8N_WEBHOOK_LEADMAGNET_URL;
 
 export default function Settings() {
   const [linkedinAccountId, setLinkedinAccountId] = useState("");
+  const [linkedinUrl, setLinkedinUrl] = useState("");
+  const [webhookUrl, setWebhookUrl] = useState(N8N_WEBHOOK_URL);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
@@ -19,7 +21,7 @@ export default function Settings() {
 
   useEffect(() => {
     fetchLinkedinAccountId();
-  }, []);
+  }, [user]);
 
   const fetchLinkedinAccountId = async () => {
     if (!user) return;
@@ -27,14 +29,18 @@ export default function Settings() {
       setLoading(true);
       const { data, error } = await supabase
         .from("profiles")
-        .select("linkedin_account_id")
+        .select("linkedin_account_id, n8n_webhook_url, linkedin_url")
         .eq("id", user.id)
         .single();
 
       if (error) {
-        console.error("Error fetching linkedin_account_id:", error);
+        console.error("Error fetching profile settings:", error);
       } else if (data) {
         setLinkedinAccountId(data.linkedin_account_id || "");
+        setLinkedinUrl(data.linkedin_url || "");
+        if (data.n8n_webhook_url) {
+          setWebhookUrl(data.n8n_webhook_url);
+        }
       }
     } catch (error) {
       console.error("Error:", error);
@@ -57,14 +63,18 @@ export default function Settings() {
       setSaving(true);
       const { error } = await supabase
         .from("profiles")
-        .update({ linkedin_account_id: linkedinAccountId })
+        .update({
+          linkedin_account_id: linkedinAccountId.trim(),
+          linkedin_url: linkedinUrl.trim(),
+          n8n_webhook_url: webhookUrl.trim()
+        })
         .eq("id", user.id);
 
       if (error) {
-        console.error("Error updating linkedin_account_id:", error);
+        console.error("Error updating profile settings:", error);
         toast({
           title: "Erreur",
-          description: "Impossible de sauvegarder le LinkedIn Account ID",
+          description: "Impossible de sauvegarder les paramètres",
           variant: "destructive",
         });
         return;
@@ -72,7 +82,7 @@ export default function Settings() {
 
       toast({
         title: "Succès",
-        description: "LinkedIn Account ID sauvegardé",
+        description: "Paramètres sauvegardés",
       });
     } catch (error) {
       console.error("Error:", error);
@@ -130,6 +140,15 @@ export default function Settings() {
                 onChange={(e) => setLinkedinAccountId(e.target.value)}
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="linkedin-url">URL Profil LinkedIn</Label>
+              <Input
+                id="linkedin-url"
+                placeholder="https://www.linkedin.com/in/votre-nom"
+                value={linkedinUrl}
+                onChange={(e) => setLinkedinUrl(e.target.value)}
+              />
+            </div>
             <Button onClick={handleSave} disabled={saving}>
               {saving ? (
                 <>
@@ -150,25 +169,42 @@ export default function Settings() {
           <CardHeader>
             <CardTitle>Webhook N8N</CardTitle>
             <CardDescription>
-              URL du webhook pour l'envoi des lead magnets
+              URL du webhook unique pour toutes les opérations (Récupération des posts et Lead Magnets)
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label>URL du Webhook</Label>
+              <Label htmlFor="webhook-url">URL du Webhook</Label>
               <div className="flex gap-2">
-                <code className="flex-1 p-3 bg-muted rounded-lg font-mono text-sm break-all">
-                  {N8N_WEBHOOK_URL}
-                </code>
+                <Input
+                  id="webhook-url"
+                  placeholder="https://n8n..."
+                  value={webhookUrl}
+                  onChange={(e) => setWebhookUrl(e.target.value)}
+                  className="flex-1 font-mono text-sm"
+                />
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => copyToClipboard(N8N_WEBHOOK_URL)}
+                  onClick={() => copyToClipboard(webhookUrl)}
                 >
                   <Copy className="h-4 w-4" />
                 </Button>
               </div>
             </div>
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Sauvegarde...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Sauvegarder
+                </>
+              )}
+            </Button>
           </CardContent>
         </Card>
       </div>

@@ -49,19 +49,43 @@ export default function PostsList() {
   const [deleting, setDeleting] = useState(false);
   const [postTypeFilter, setPostTypeFilter] = useState<PostTypeFilter>('all');
   const [mediaTypeFilter, setMediaTypeFilter] = useState<MediaTypeFilter>('all');
+  const [fetchPostWebhookUrl, setFetchPostWebhookUrl] = useState<string | null>(null);
+  const [linkedinAccountId, setLinkedinAccountId] = useState<string | null>(null);
+  const [linkedinUrl, setLinkedinUrl] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useUser();
 
   useEffect(() => {
     fetchPosts();
-    
+    fetchProfileSettings();
+
     // Rafraîchissement automatique toutes les minutes
     const interval = setInterval(() => {
       fetchPosts();
     }, 60000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [user]);
+
+  const fetchProfileSettings = async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("n8n_webhook_url, linkedin_account_id, linkedin_url")
+        .eq("id", user.id)
+        .single();
+
+      if (!error && data) {
+        console.log("Profile settings loaded:", data);
+        setFetchPostWebhookUrl(data.n8n_webhook_url || null);
+        setLinkedinAccountId(data.linkedin_account_id || null);
+        setLinkedinUrl(data.linkedin_url || null);
+      }
+    } catch (error) {
+      console.error("Error fetching profile settings:", error);
+    }
+  };
 
   const fetchPosts = async () => {
     try {
@@ -147,22 +171,56 @@ export default function PostsList() {
       return;
     }
 
+    if (!linkedinAccountId || !linkedinUrl) {
+      toast({
+        title: "Configuration requise",
+        description: "Veuillez configurer votre LinkedIn Account ID et URL dans les paramètres.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setFetchingPost(true);
 
     try {
-      const response = await fetch(N8N_WEBHOOK_FETCH_POST_URL, {
+      // Récupérer les paramètres les plus récents juste avant la récupération
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("n8n_webhook_url, linkedin_account_id, linkedin_url")
+        .eq("id", user.id)
+        .single();
+
+      const latestLinkedinAccountId = profile?.linkedin_account_id || linkedinAccountId;
+      const latestLinkedinUrl = profile?.linkedin_url || linkedinUrl;
+      const latestWebhookUrl = profile?.n8n_webhook_url || fetchPostWebhookUrl || N8N_WEBHOOK_FETCH_POST_URL;
+
+      if (!latestLinkedinAccountId || !latestLinkedinUrl) {
+        toast({
+          title: "Configuration requise",
+          description: "Veuillez configurer votre LinkedIn Account ID et URL dans les paramètres.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log("Triggering webhook:", latestWebhookUrl);
+      const response = await fetch(latestWebhookUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          action: "fetch_last_post",
           email: user.email,
           user_id: user.id,
+          linkedin_account_id: latestLinkedinAccountId,
+          linkedin_url: latestLinkedinUrl,
         }),
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(`Erreur serveur (${response.status}): ${errorData.message || 'Workflow n8n échoué'}`);
       }
 
       toast({
@@ -308,11 +366,11 @@ export default function PostsList() {
             </TableHeader>
             <TableBody>
               {filteredPosts.map((post) => (
-                <TableRow 
+                <TableRow
                   key={post.id}
                   className="hover:bg-muted/50"
                 >
-                  <TableCell 
+                  <TableCell
                     className="text-sm cursor-pointer"
                     onClick={() => setSelectedPost(post)}
                   >
@@ -321,13 +379,13 @@ export default function PostsList() {
                       month: 'short',
                     }) : '-'}
                   </TableCell>
-                  <TableCell 
+                  <TableCell
                     className="font-medium cursor-pointer"
                     onClick={() => setSelectedPost(post)}
                   >
                     {truncateDescription(getCaption(post), 100) || `Post ${post.id}`}
                   </TableCell>
-                  <TableCell 
+                  <TableCell
                     onClick={() => setSelectedPost(post)}
                     className="cursor-pointer"
                   >
@@ -339,7 +397,7 @@ export default function PostsList() {
                       <Badge variant="secondary" className="text-xs">Normal</Badge>
                     )}
                   </TableCell>
-                  <TableCell 
+                  <TableCell
                     onClick={() => setSelectedPost(post)}
                     className="cursor-pointer"
                   >
@@ -373,102 +431,102 @@ export default function PostsList() {
 
       {/* Dialog de détails du post */}
       <Dialog open={!!selectedPost} onOpenChange={(open) => !open && setSelectedPost(null)}>
-                        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           {selectedPost && (
             <>
-                          <DialogHeader>
+              <DialogHeader>
                 <DialogTitle>Détails du Post {selectedPost.id}</DialogTitle>
-                          </DialogHeader>
-                          
-                          <div className="space-y-4">
-                            <div>
-                              <h4 className="font-medium text-sm text-muted-foreground mb-1">Date d'ajout:</h4>
-                              <p className="text-sm">
-                    {selectedPost.added_at ? new Date(selectedPost.added_at).toLocaleDateString('fr-FR', {
-                                  day: 'numeric',
-                                  month: 'long',
-                                  year: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit'
-                                }) : 'Date inconnue'}
-                              </p>
-                            </div>
+              </DialogHeader>
 
-                    {getCaption(selectedPost) && (
-                      <div>
-                        <h4 className="font-medium text-sm text-muted-foreground mb-1">Caption:</h4>
-                        <p className="text-sm leading-relaxed bg-muted/50 p-3 rounded-md whitespace-pre-wrap">
-                          {getCaption(selectedPost)}
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-medium text-sm text-muted-foreground mb-1">Date d'ajout:</h4>
+                  <p className="text-sm">
+                    {selectedPost.added_at ? new Date(selectedPost.added_at).toLocaleDateString('fr-FR', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    }) : 'Date inconnue'}
+                  </p>
+                </div>
+
+                {getCaption(selectedPost) && (
+                  <div>
+                    <h4 className="font-medium text-sm text-muted-foreground mb-1">Caption:</h4>
+                    <p className="text-sm leading-relaxed bg-muted/50 p-3 rounded-md whitespace-pre-wrap">
+                      {getCaption(selectedPost)}
+                    </p>
+                  </div>
+                )}
+
+                {selectedPost.media_url && (
+                  <div>
+                    <h4 className="font-medium text-sm text-muted-foreground mb-1">Media:</h4>
+                    {selectedPost.media_url.toLowerCase().includes('.pdf') ? (
+                      <div className="bg-muted/50 p-3 rounded-md">
+                        <p className="text-sm mb-2">Document PDF:</p>
+                        <a
+                          href={selectedPost.media_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-primary hover:underline break-all"
+                        >
+                          {selectedPost.media_url}
+                        </a>
+                      </div>
+                    ) : (
+                      <div className="bg-muted/50 p-3 rounded-md">
+                        <img
+                          src={selectedPost.media_url}
+                          alt="Media du post"
+                          className="max-w-full h-auto rounded-md border"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            const nextEl = target.nextElementSibling as HTMLElement;
+                            if (nextEl) nextEl.style.display = 'block';
+                          }}
+                        />
+                        <p className="text-sm text-muted-foreground hidden">
+                          Impossible de charger l'image:
+                          <a
+                            href={selectedPost.media_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline break-all ml-1"
+                          >
+                            {selectedPost.media_url}
+                          </a>
                         </p>
                       </div>
                     )}
-
-                    {selectedPost.media_url && (
-                      <div>
-                        <h4 className="font-medium text-sm text-muted-foreground mb-1">Media:</h4>
-                        {selectedPost.media_url.toLowerCase().includes('.pdf') ? (
-                          <div className="bg-muted/50 p-3 rounded-md">
-                            <p className="text-sm mb-2">Document PDF:</p>
-                            <a 
-                              href={selectedPost.media_url} 
-                              target="_blank" 
-                              rel="noopener noreferrer" 
-                              className="text-sm text-primary hover:underline break-all"
-                            >
-                              {selectedPost.media_url}
-                            </a>
-                          </div>
-                        ) : (
-                          <div className="bg-muted/50 p-3 rounded-md">
-                            <img 
-                              src={selectedPost.media_url} 
-                              alt="Media du post" 
-                              className="max-w-full h-auto rounded-md border"
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.style.display = 'none';
-                                const nextEl = target.nextElementSibling as HTMLElement;
-                                if (nextEl) nextEl.style.display = 'block';
-                              }}
-                            />
-                            <p className="text-sm text-muted-foreground hidden">
-                              Impossible de charger l'image: 
-                              <a 
-                                href={selectedPost.media_url} 
-                                target="_blank" 
-                                rel="noopener noreferrer" 
-                                className="text-primary hover:underline break-all ml-1"
-                              >
-                                {selectedPost.media_url}
-                              </a>
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                  </div>
+                )}
 
                 {selectedPost.keyword && (
-                              <div>
-                                <h4 className="font-medium text-sm text-muted-foreground mb-1">Mot-clé CTA:</h4>
+                  <div>
+                    <h4 className="font-medium text-sm text-muted-foreground mb-1">Mot-clé CTA:</h4>
                     <p className="text-sm bg-muted/50 p-3 rounded-md">{selectedPost.keyword}</p>
-                              </div>
-                            )}
+                  </div>
+                )}
 
                 {selectedPost.post_url && (
-                              <div>
-                                <h4 className="font-medium text-sm text-muted-foreground mb-1">URL du post:</h4>
-                                <a 
-                      href={selectedPost.post_url} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer" 
-                                  className="text-sm text-primary hover:underline break-all bg-muted/50 p-3 rounded-md block"
-                                >
+                  <div>
+                    <h4 className="font-medium text-sm text-muted-foreground mb-1">URL du post:</h4>
+                    <a
+                      href={selectedPost.post_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary hover:underline break-all bg-muted/50 p-3 rounded-md block"
+                    >
                       {selectedPost.post_url}
-                                </a>
-                              </div>
-                            )}
+                    </a>
+                  </div>
+                )}
 
-                              <div>
+                <div>
                   <h4 className="font-medium text-sm text-muted-foreground mb-1">Type de post:</h4>
                   <p className="text-sm">
                     {selectedPost.keyword ? (
@@ -479,21 +537,21 @@ export default function PostsList() {
                       <Badge variant="secondary" className="text-xs">Normal</Badge>
                     )}
                   </p>
-                              </div>
+                </div>
 
                 {selectedPost.type_post && (
-                              <div>
+                  <div>
                     <h4 className="font-medium text-sm text-muted-foreground mb-1">Type de média:</h4>
                     <Badge variant="outline" className="text-xs capitalize">
                       {selectedPost.type_post}
                     </Badge>
-                                    </div>
-                                  )}
-                                </div>
+                  </div>
+                )}
+              </div>
             </>
-                            )}
-                        </DialogContent>
-                      </Dialog>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Dialog de confirmation de suppression */}
       <Dialog open={!!postToDelete} onOpenChange={(open) => !open && setPostToDelete(null)}>
